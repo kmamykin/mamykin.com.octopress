@@ -1,0 +1,91 @@
+This walkthrough is meant to be an additional information resource with clarifications and tips on how to build the Sun's JDK 1.6 on Windows. It is not an all encompusing guide on the build, please read the official build instructions page here. However the official build instructions are sometimes unclear on certain things, or just not as up to date, and it took me awhile to google through all the errors. Hopefully you will be able to avoid the same pitfalls by following this walk through.
+
+Initial reading:
+<a href="http://download.java.net/jdk6/source/">Download JDK 1.6 source</a>
+<a href="http://download.java.net/jdk6/6u15/promoted/b03/docs/build/README-builds.html">Official build instructions</a>
+
+This guide has been tested with JDK 1.6u15 on Windows XP, with CYGWIN. 
+
+What you will need:
+Download JDK source jar from the link above. The file is called: jdk-6u15-fcs-src-b03-jrl-02_jul_2009.jar
+Download JDK source binaries jar from the link above: File: jdk-6u15-fcs-bin-b03-jrl-02_jul_2009.jar
+I also downloaded Mozilla Binaries for Windows but I dont think it is necessary.
+
+1) Unarchive the source and the source binaries into <b>*the same*</b> directory.
+Example:
+<pre lang="dos">java -jar jdk-6u15-fcs-src-b03-jrl-02_jul_2009.jar</pre>
+<pre lang="dos">java -jar jdk-6u15-fcs-bin-b03-jrl-02_jul_2009.jar</pre>
+Pick the same destination directory for both, in this walk through I will use C:\Misc\jdk6build\workspace
+
+2) Install CYGWIN if you don't already have it. Even if you do, you may want to rerun cygwin's setup.exe and make sure you have all development tools installed from Devel category.
+
+3) Downgrade CYGWIN's make utility to v3.80
+Currently cygwin includes make v3.81, which discontinued its support for paths in C:/path/path/path format. However the JDK build make files rely heavily on this path format. You can get and compile make v3.80 from source or goggle the web for a precompiled binaries.
+<insert link to download precompiled binary>
+
+Validate from cmd:
+<pre lang="dos">
+C:\Misc\jdk6build\workspace>make -version
+GNU Make 3.80
+...
+</pre>
+
+3) Install Bootstrap JDK.
+
+Even though the build instructions specify it should be a 1.5 JDK, you really need 1.6 JDK, or you will get an error during dev-sanity target. If you already have 1.6 JDK installed you can use that install.
+
+4) Install Microsoft DirectX SDK.
+
+There is nothing special about this install (see build instructions for the URL), download, install it and remember the path to the install. Something like C:\Program Files\Microsoft DirectX 9.0 SDK (Summer 2004)
+
+5) Open up a windows command line prompt (cmd).
+
+It looks like the build system needs to be invoked from windows command line, not cygwin shell, which was a suprprise to me. I did not realize it was possible to call cygwin utilities from dos command line, I always used bash shell... anyway, back to cmd:
+
+Double check your PATH environment variable. What you want is the cygwin path to be after the path to VS2003 binaries, otherwise at some point in the build you will get an error about inability to determine linker's version. It is because some make file calls "link" command which resolves to cygwin's link, not VS2003. I would actually advise you to reset it clean, to get rid off (in my case for example from UnxUtils in the path) other settings that may interfer.
+<pre lang="dos">set PATH=%SystemRoot%\system32;c:\cygwin\bin</pre>
+
+6) Setup VS2003 environment variables:
+
+Run vsvars32.bat for VS2003:
+
+<pre lang="dos">C:\Misc\jdk6build\workspace>"\Program Files\Microsoft Visual Studio .NET 2003\Common7\Tools\vsvars32.bat"
+Setting environment for using Microsoft Visual Studio .NET 2003 tools.
+(If you have another version of Visual Studio or Visual C++ installed and wish
+to use its tools from the command line, run vcvars32.bat for that version.)
+</pre>
+Validate by running cl and link. Both should print Microsoft copyright.
+
+7) Set necessary environment variables
+
+I was able to get by by setting just ALT_BOOTDIR and ALT_DXSDK_PATH, you might need to set more variables, see the official build instructions for the full list.
+
+The trick here is that the variables need to be set in cygwin's "mixed" path format, C:/DIRECTO~/SUBDIREC~/file, which can be calculated using cygpath -s -m ""
+
+<pre lang="dos">
+C:\Misc\jdk6build\workspace>cygpath -s -m "C:\Program Files\Microsoft DirectX 9.0 SDK (Summer 2004)"
+C:/PROGRA~1/MICROS~1.0SD
+C:\Misc\jdk6build\workspace>set ALT_DXSDK_PATH=C:/PROGRA~1/MICROS~1.0SD
+C:\Misc\jdk6build\workspace>cygpath -s -m "C:\Program Files\Java\jdk1.6.0_15"
+C:/PROGRA~1/Java/JDK16~4.0_1
+C:\Misc\jdk6build\workspace>set ALT_BOOTDIR=C:/PROGRA~1/Java/JDK16~4.0_1
+</pre>
+
+8 ) Run dev-sanity target and fix all warnings/errors
+<pre lang="dos">
+C:\Misc\jdk6build\workspace>cd control\make
+C:\Misc\jdk6build\workspace\control\make>make dev-sanity ARCH_DATA_MODEL=32
+</pre>
+
+In my case I had to unset CLASSPATH and JAVA_HOME env variables.
+<pre lang="dos">
+C:\Misc\jdk6build\workspace\control\make>set CLASSPATH=
+C:\Misc\jdk6build\workspace\control\make>set JAVA_HOME=
+</pre>
+
+9) Finally kick off the build and go get yourself a nice beverage, you will be staring at it for a while:)
+<pre lang="dos">
+C:\Misc\jdk6build\workspace\control\make>make dev ARCH_DATA_MODEL=32
+</pre>
+
+
