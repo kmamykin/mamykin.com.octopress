@@ -1,0 +1,84 @@
+---
+layout: post
+title: How to deploy Jekyll blog to a shared host
+---
+
+h1. {{ page.title }}
+
+I have converted my blog at "mamykin.com":http://mamykin.com to "Jekyll":http://jekyllrb.com/ (which is an awesomely simple and elegant piece of software).
+
+However deploying the converted blog to a shared hosting server proved to be a bit of a difficulty.
+
+The docs on Jekyl advise to add a git post-receive hook on the server, which clones your git repo, runs jekyll on the server and copies generated site (_site directory) to the final location served by the server. See "Deployment":https://github.com/mojombo/jekyll/wiki/Deployment
+
+The problematic part is that Jekyll (and Python + Pygments) needs to be installed on the server in order to generate the site. This is always a hastle on shared hosting, since you are most likely in a sandboxed environment without root access. I figured out how to install jekyll gem  + RedCloth under my user account, but installing Pygments failed. Apparently my shared host server is not configured for a sandboxed Python installs :(
+
+My solution is to generate the site and add it to git on the client with pre-commit git hook.
+
+Below is my modified deploy instructions for a shared host.
+
+h2. Setup remote git repo
+
+Here we create a bare git repository and a directory for the website.
+
+{% highlight bash %}
+laptop$ ssh deployer@myserver.com
+server$ mkdir myrepo.git
+server$ cd myrepo.git
+server$ git --bare init
+server$ cp hooks/post-receive.sample hooks/post-receive
+server$ mkdir ~/myrepo
+{% endhighlight %}
+
+Add the following to ~/myrepo.git/hooks/post-receive
+
+{% highlight bash %}
+#!/bin/sh
+
+GIT_REPO=$HOME/myrepo.git
+PUBLIC_WWW=$HOME/myrepo
+
+rm -Rf $PUBLIC_WWW/*
+git clone $GIT_REPO $PUBLIC_WWW
+exit
+{% endhighlight %}
+
+Most shared host have a directory (or symbolic link) in user's home folder to point to the dir served by the webserver. Here we override it to point to the _site directory of the checked out blog.
+
+{% highlight bash %}
+mv ~/public_html ~/public_html.bak
+ln -s ~/myrepo/_site ~/public_html
+{% endhighlight %}
+
+h2. Setup local git repo
+
+On your workstation add a pre-commit hook to generate the site and add modified files to git.
+
+Inside .git/hooks/pre-commit:
+
+{% highlight bash %}
+#!/bin/sh
+
+echo "Creating site with jekyll"
+jekyll
+git add -v -f _site
+{% endhighlight %}
+
+Note: -f flag when adding _site files is necessary because I have _site directory ignored in .gitignore
+
+{% highlight bash %}
+git remote add deploy deployer@myserver.com:~/myrepo.git
+{% endhighlight %}
+
+
+h2. Deploy with a push
+
+The only thing left to do is to push you local repository to the server with git push deploy master, 
+
+{% highlight bash %}
+git push deploy master
+{% endhighlight %}
+
+and verify the site is served correctly.
+
+

@@ -159,6 +159,7 @@ ul.posts span {
   background-color: #eef;
   padding: 0 .4em;
   overflow: auto;
+  margin-bottom: 1em;
 }
 
 #post ul,

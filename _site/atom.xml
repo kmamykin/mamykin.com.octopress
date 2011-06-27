@@ -4,13 +4,67 @@
  <title>Kliment Mamykin</title>
  <link href="http://mamykin.com/atom.xml" rel="self"/>
  <link href="http://mamykin.com/"/>
- <updated>2011-06-27T03:18:50-04:00</updated>
+ <updated>2011-06-27T04:35:23-04:00</updated>
  <id>http://mamykin.com/</id>
  <author>
    <name>Kliment Mamykin</name>
    <email>kmamyk@gmail.com</email>
  </author>
 
+ 
+ <entry>
+   <title>How to deploy Jekyll blog to a shared host</title>
+   <link href="http://mamykin.com/2011/06/27/deploying-jekyll-blog-on-shared-host.html"/>
+   <updated>2011-06-27T00:00:00-04:00</updated>
+   <id>http://mamykincom/2011/06/27/deploying-jekyll-blog-on-shared-host</id>
+   <content type="html">&lt;h1&gt;How to deploy Jekyll blog to a shared host&lt;/h1&gt;
+&lt;p&gt;I have converted my blog at &lt;a href=&quot;http://mamykin.com&quot;&gt;mamykin.com&lt;/a&gt; to &lt;a href=&quot;http://jekyllrb.com/&quot;&gt;Jekyll&lt;/a&gt; (which is an awesomely simple and elegant piece of software).&lt;/p&gt;
+&lt;p&gt;However deploying the converted blog to a shared hosting server proved to be a bit of a difficulty.&lt;/p&gt;
+&lt;p&gt;The docs on Jekyl advise to add a git post-receive hook on the server, which clones your git repo, runs jekyll on the server and copies generated site (_site directory) to the final location served by the server. See &lt;a href=&quot;https://github.com/mojombo/jekyll/wiki/Deployment&quot;&gt;Deployment&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;The problematic part is that Jekyll (and Python + Pygments) needs to be installed on the server in order to generate the site. This is always a hastle on shared hosting, since you are most likely in a sandboxed environment without root access. I figured out how to install jekyll gem  + RedCloth under my user account, but installing Pygments failed. Apparently my shared host server is not configured for a sandboxed Python installs :(&lt;/p&gt;
+&lt;p&gt;My solution is to generate the site and add it to git on the client with pre-commit git hook.&lt;/p&gt;
+&lt;p&gt;Below is my modified deploy instructions for a shared host.&lt;/p&gt;
+&lt;h2&gt;Setup remote git repo&lt;/h2&gt;
+&lt;p&gt;Here we create a bare git repository and a directory for the website.&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;bash&quot;&gt;laptop&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;ssh deployer@myserver.com
+server&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;mkdir myrepo.git
+server&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;cd &lt;/span&gt;myrepo.git
+server&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;git --bare init
+server&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;cp hooks/post-receive.sample hooks/post-receive
+server&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;mkdir ~/myrepo
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;&lt;p&gt;Add the following to ~/myrepo.git/hooks/post-receive&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;bash&quot;&gt;&lt;span class=&quot;c&quot;&gt;#!/bin/sh&lt;/span&gt;
+
+&lt;span class=&quot;nv&quot;&gt;GIT_REPO&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$HOME&lt;/span&gt;/myrepo.git
+&lt;span class=&quot;nv&quot;&gt;PUBLIC_WWW&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$HOME&lt;/span&gt;/myrepo
+
+rm -Rf &lt;span class=&quot;nv&quot;&gt;$PUBLIC_WWW&lt;/span&gt;/*
+git clone &lt;span class=&quot;nv&quot;&gt;$GIT_REPO&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$PUBLIC_WWW&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;exit&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;&lt;p&gt;Most shared host have a directory (or symbolic link) in user&amp;#8217;s home folder to point to the dir served by the webserver. Here we override it to point to the _site directory of the checked out blog.&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;bash&quot;&gt;mv ~/public_html ~/public_html.bak
+ln -s ~/myrepo/_site ~/public_html
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;&lt;h2&gt;Setup local git repo&lt;/h2&gt;
+&lt;p&gt;On your workstation add a pre-commit hook to generate the site and add modified files to git.&lt;/p&gt;
+&lt;p&gt;Inside .git/hooks/pre-commit:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;bash&quot;&gt;&lt;span class=&quot;c&quot;&gt;#!/bin/sh&lt;/span&gt;
+
+&lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;Creating site with jekyll&amp;quot;&lt;/span&gt;
+jekyll
+git add -v -f _site
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;&lt;p&gt;Note: -f flag when adding _site files is necessary because I have _site directory ignored in .gitignore&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;bash&quot;&gt;git remote add deploy deployer@myserver.com:~/myrepo.git
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;&lt;h2&gt;Deploy with a push&lt;/h2&gt;
+&lt;p&gt;The only thing left to do is to push you local repository to the server with git push deploy master,&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;bash&quot;&gt;git push deploy master
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;&lt;p&gt;and verify the site is served correctly.&lt;/p&gt;</content>
+ </entry>
  
  <entry>
    <title>Synology 209 NAS Server performance testing</title>
