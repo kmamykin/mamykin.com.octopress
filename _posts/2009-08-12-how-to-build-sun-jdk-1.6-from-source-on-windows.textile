@@ -1,8 +1,15 @@
+---
+layout: post
+title: How to build Sun JDK 1.6 from source on Windows
+---
+
+h1. {{ page.title }}
+
 This walkthrough is meant to be an additional information resource with clarifications and tips on how to build the Sun's JDK 1.6 on Windows. It is not an all encompusing guide on the build, please read the official build instructions page here. However the official build instructions are sometimes unclear on certain things, or just not as up to date, and it took me awhile to google through all the errors. Hopefully you will be able to avoid the same pitfalls by following this walk through.
 
 Initial reading:
-<a href="http://download.java.net/jdk6/source/">Download JDK 1.6 source</a>
-<a href="http://download.java.net/jdk6/6u15/promoted/b03/docs/build/README-builds.html">Official build instructions</a>
+"Download JDK 1.6 source":http://download.java.net/jdk6/source/
+"Official build instructions":http://download.java.net/jdk6/6u15/promoted/b03/docs/build/README-builds.html
 
 This guide has been tested with JDK 1.6u15 on Windows XP, with CYGWIN. 
 
