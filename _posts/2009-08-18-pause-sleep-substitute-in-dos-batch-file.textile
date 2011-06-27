@@ -11,5 +11,9 @@ I know it is a part of the Windows Resource Kit, but when installing
 extra pack is not an option, you can always resort "to using ping":http://malektips.com/dos0017.html as a poor man's substitute for sleep.
 
 For example this command will effectively sleep for 15 seconds:
-<pre lang="dos">ping 1.1.1.1 -n 1 -w 15000 > NUL</pre>
+
+{% highlight bat %}
+ping 1.1.1.1 -n 1 -w 15000 > NUL
+{% endhighlight %}
+
 

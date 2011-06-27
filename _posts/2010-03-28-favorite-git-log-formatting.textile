@@ -1,21 +1,41 @@
-<pre lang="bash">git log --graph --pretty=format:"%Creset%h %aN %Cred%d %Cblue%s"</pre>
+---
+layout: post
+title: My favorite git log formatting
+---
+
+h1. {{ page.title }}
+
+{% highlight bash %}
+git log --graph --pretty=format:"%Creset%h %aN %Cred%d %Cblue%s"
+{% endhighlight %}
+
 or create an alias in your ~/.bash_profile
-<pre lang="bash">alias gl='git log --graph --pretty=format:"%Creset%h %aN %Cred%d %Cblue%s"'</pre>
-<img src="/wp-content/uploads/2010/04/git_log_output.png" alt="null" />
+
+{% highlight bash %}
+alias gl='git log --graph --pretty=format:"%Creset%h %aN %Cred%d %Cblue%s"'
+{% endhighlight %}
+
+!/images/git_log_output.png!
 
 For a small project where you have just a few collaborators you may consider replacing the author name with the initials to save space. .mailmap file to the rescue! (see git shortlog --help for the structure of the file).
 Create .mailmap file at the root of the git repository:
-<pre lang="bash">echo "HS <homer@simpsons.tv>" >> .mailmap</pre>
+
+{% highlight bash %}
+echo "HS <homer@simpsons.tv>" >> .mailmap
+{% endhighlight %}
+
 and the output of gl alias is much nicer. Enjoy.
 
-<strong>Update:</strong>
-I came across <a href="http://www.jukie.net/bart/blog/pimping-out-git-log">Bart's Blog</a> post with a bit more elaborate (and prettier to my eyes) format. Bart also shows how you can setup git alias (as oppose to bash alias)
-<pre lang="bash">
-git config --global alias.lg "log --graph --pretty=format:'%Creset%Cred%h%Creset -%C(
-yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative"
-</pre>
-To use the alias do
-<pre lang="bash">
-git gl
-</pre>
+*Update:*
+I came across "Bart's Blog":http://www.jukie.net/bart/blog/pimping-out-git-log post with a bit more 
+elaborate (and prettier to my eyes) format. Bart also shows how you can setup git alias (as oppose to bash alias)
 
+{% highlight bash %}
+git config --global alias.lg "log --graph --pretty=format:'%Creset%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative"
+{% endhighlight %}
+
+To use the alias do
+
+{% highlight bash %}
+git gl
+{% endhighlight %}

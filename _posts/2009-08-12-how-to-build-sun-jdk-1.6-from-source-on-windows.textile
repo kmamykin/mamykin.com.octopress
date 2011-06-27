@@ -20,8 +20,12 @@ I also downloaded Mozilla Binaries for Windows but I dont think it is necessary.
 
 1) Unarchive the source and the source binaries into <b>*the same*</b> directory.
 Example:
-<pre lang="dos">java -jar jdk-6u15-fcs-src-b03-jrl-02_jul_2009.jar</pre>
-<pre lang="dos">java -jar jdk-6u15-fcs-bin-b03-jrl-02_jul_2009.jar</pre>
+
+{% highlight bat %}
+java -jar jdk-6u15-fcs-src-b03-jrl-02_jul_2009.jar
+java -jar jdk-6u15-fcs-bin-b03-jrl-02_jul_2009.jar
+{% endhighlight %}
+
 Pick the same destination directory for both, in this walk through I will use C:\Misc\jdk6build\workspace
 
 2) Install CYGWIN if you don't already have it. Even if you do, you may want to rerun cygwin's setup.exe and make sure you have all development tools installed from Devel category.
@@ -31,11 +35,12 @@ Currently cygwin includes make v3.81, which discontinued its support for paths i
 <insert link to download precompiled binary>
 
 Validate from cmd:
-<pre lang="dos">
+
+{% highlight bat %}
 C:\Misc\jdk6build\workspace>make -version
 GNU Make 3.80
 ...
-</pre>
+{% endhighlight %}
 
 3) Install Bootstrap JDK.
 
@@ -47,20 +52,25 @@ There is nothing special about this install (see build instructions for the URL)
 
 5) Open up a windows command line prompt (cmd).
 
-It looks like the build system needs to be invoked from windows command line, not cygwin shell, which was a suprprise to me. I did not realize it was possible to call cygwin utilities from dos command line, I always used bash shell... anyway, back to cmd:
+It looks like the build system needs to be invoked from windows command line, not cygwin shell, which was a suprprise to me. I did not realize it was possible to call cygwin utilities from dos command line, I always used bat shell... anyway, back to cmd:
 
 Double check your PATH environment variable. What you want is the cygwin path to be after the path to VS2003 binaries, otherwise at some point in the build you will get an error about inability to determine linker's version. It is because some make file calls "link" command which resolves to cygwin's link, not VS2003. I would actually advise you to reset it clean, to get rid off (in my case for example from UnxUtils in the path) other settings that may interfer.
-<pre lang="dos">set PATH=%SystemRoot%\system32;c:\cygwin\bin</pre>
+
+{% highlight bat %}
+Set PATH=%SystemRoot%\system32;c:\cygwin\bin
+{% endhighlight %}
 
 6) Setup VS2003 environment variables:
 
 Run vsvars32.bat for VS2003:
 
-<pre lang="dos">C:\Misc\jdk6build\workspace>"\Program Files\Microsoft Visual Studio .NET 2003\Common7\Tools\vsvars32.bat"
+{% highlight bat %}
+C:\Misc\jdk6build\workspace>"\Program Files\Microsoft Visual Studio .NET 2003\Common7\Tools\vsvars32.bat"
 Setting environment for using Microsoft Visual Studio .NET 2003 tools.
 (If you have another version of Visual Studio or Visual C++ installed and wish
 to use its tools from the command line, run vcvars32.bat for that version.)
-</pre>
+{% endhighlight %}
+
 Validate by running cl and link. Both should print Microsoft copyright.
 
 7) Set necessary environment variables
@@ -69,30 +79,33 @@ I was able to get by by setting just ALT_BOOTDIR and ALT_DXSDK_PATH, you might n
 
 The trick here is that the variables need to be set in cygwin's "mixed" path format, C:/DIRECTO~/SUBDIREC~/file, which can be calculated using cygpath -s -m ""
 
-<pre lang="dos">
+{% highlight bat %}
 C:\Misc\jdk6build\workspace>cygpath -s -m "C:\Program Files\Microsoft DirectX 9.0 SDK (Summer 2004)"
 C:/PROGRA~1/MICROS~1.0SD
 C:\Misc\jdk6build\workspace>set ALT_DXSDK_PATH=C:/PROGRA~1/MICROS~1.0SD
 C:\Misc\jdk6build\workspace>cygpath -s -m "C:\Program Files\Java\jdk1.6.0_15"
 C:/PROGRA~1/Java/JDK16~4.0_1
 C:\Misc\jdk6build\workspace>set ALT_BOOTDIR=C:/PROGRA~1/Java/JDK16~4.0_1
-</pre>
+{% endhighlight %}
 
 8 ) Run dev-sanity target and fix all warnings/errors
-<pre lang="dos">
+
+{% highlight bat %}
 C:\Misc\jdk6build\workspace>cd control\make
 C:\Misc\jdk6build\workspace\control\make>make dev-sanity ARCH_DATA_MODEL=32
-</pre>
+{% endhighlight %}
 
 In my case I had to unset CLASSPATH and JAVA_HOME env variables.
-<pre lang="dos">
+
+{% highlight bat %}
 C:\Misc\jdk6build\workspace\control\make>set CLASSPATH=
 C:\Misc\jdk6build\workspace\control\make>set JAVA_HOME=
-</pre>
+{% endhighlight %}
 
 9) Finally kick off the build and go get yourself a nice beverage, you will be staring at it for a while:)
-<pre lang="dos">
+
+{% highlight bat %}
 C:\Misc\jdk6build\workspace\control\make>make dev ARCH_DATA_MODEL=32
-</pre>
+{% endhighlight %}
 
 
