@@ -48,7 +48,6 @@ If on Mac:
 sudo port install iperf
 {% endhighlight %}
 
-
 h3. Performing test
 
 on nas1

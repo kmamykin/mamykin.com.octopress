@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+ 
+ <title>Kliment Mamykin</title>
+ <link href="http://mamykin.com/atom.xml" rel="self"/>
+ <link href="http://mamykin.com/"/>
+ <updated>2011-06-27T03:18:50-04:00</updated>
+ <id>http://mamykin.com/</id>
+ <author>
+   <name>Kliment Mamykin</name>
+   <email>kmamyk@gmail.com</email>
+ </author>
+
+ 
+ <entry>
+   <title>Synology 209 NAS Server performance testing</title>
+   <link href="http://mamykin.com/2010/09/01/synology-209-nas-server-performance-testing.html"/>
+   <updated>2010-09-01T00:00:00-04:00</updated>
+   <id>http://mamykincom/2010/09/01/synology-209-nas-server-performance-testing</id>
+   <content type="html">&lt;h1&gt;Synology 209 &lt;span class=&quot;caps&quot;&gt;NAS&lt;/span&gt; Server performance testing&lt;/h1&gt;
+&lt;p&gt;I have recently purchased Synology 209 &lt;span class=&quot;caps&quot;&gt;NAS&lt;/span&gt; server which got a lot of good reviews on newegg.com.&lt;/p&gt;
+&lt;p&gt;Before I committed to this particular piece of hardware, I spend some time researching which particular model to choose (210j &amp;#8211; newer but slower &lt;span class=&quot;caps&quot;&gt;CPU&lt;/span&gt; or 209 &amp;#8211; with a bit beefier &lt;span class=&quot;caps&quot;&gt;CPU&lt;/span&gt;), which drives to pick (&lt;span class=&quot;caps&quot;&gt;RPM&lt;/span&gt;, cache size, etc).  I ended up buying 209 model with 2 Western Digital Green Caviar 1.5TB 5400RPM 64M cache drives.&lt;/p&gt;
+&lt;p&gt;When the package arrived, giggling like a kid on Christmas, I opened it up, install the drives, booted and configured it according to the instructions. Now it is time to back something up!  (and I had a lot of files sprinkled around on my mulitple laptops and desktops).&lt;/p&gt;
+&lt;p&gt;But I was quickly deflated when I was trying to copy 160G of raw DV video from my Ubunty box.  The initial attempt was using &lt;span class=&quot;caps&quot;&gt;CIFS&lt;/span&gt; share from my nas mounted on the linux box. I was getting ~5MB/s throughput! That&amp;#8217;s it? &lt;span class=&quot;caps&quot;&gt;WTF&lt;/span&gt;?&lt;/p&gt;
+&lt;p&gt;I decited to do a little troubleshooting.&lt;/p&gt;
+&lt;h2&gt;Test networking setup and throughput&lt;/h2&gt;
+&lt;p&gt;Everything here was attached to a cheap gigabit switch &lt;link from newegg&gt;.  Just to make sure the connection was not operating in 100M mode (which may happen depending on &lt;span class=&quot;caps&quot;&gt;NIC&lt;/span&gt; config, cabling, etc).&lt;/p&gt;
+&lt;p&gt;The goal here is install one of the network throughput benchmarking tools on both ubuntu box and Synology &lt;span class=&quot;caps&quot;&gt;NAS&lt;/span&gt;, we will use iperf &lt;link&gt; in this case.&lt;/p&gt;
+&lt;h3&gt;Install iperf&lt;/h3&gt;
+&lt;p&gt;Enable &lt;span class=&quot;caps&quot;&gt;SSH&lt;/span&gt; access to your &lt;span class=&quot;caps&quot;&gt;NAS&lt;/span&gt; server using its management site. http://nas1:5000/ Login as root to the console (You will be asked for the password):&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;bash&quot;&gt;ssh root@nas1
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;&lt;p&gt;Install ipkg tool (which allows you to install other precompiled packages on your &lt;span class=&quot;caps&quot;&gt;NAS&lt;/span&gt;). Instructions are found here &lt;link&gt;.&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;bash&quot;&gt;ipkg update
+ipkg install iperf
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;&lt;p&gt;If on Ubuntu:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;bash&quot;&gt;sudo apt-get install iperf
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;&lt;p&gt;If on Mac:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;bash&quot;&gt;sudo port install iperf
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;&lt;h3&gt;Performing test&lt;/h3&gt;
+&lt;p&gt;on nas1&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;bash&quot;&gt;iperf -s 
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;&lt;p&gt;&lt;img src=&quot;/images/iperf-nas.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;On my Mac:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;bash&quot;&gt;iperf -c nas1 -f M
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;&lt;p&gt;&lt;img src=&quot;/images/iperf-mac.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;Overall throughput is around 70 MB/s, which is not stellar (the theoretical max on a Gigabit Ethernet is 125 MB/s) but respectable. I dont have jumbo frames configured &lt;link&gt;.&lt;/p&gt;
+&lt;h2&gt;Copying photos over &lt;span class=&quot;caps&quot;&gt;CIFS&lt;/span&gt;&lt;/h2&gt;
+&lt;p&gt;While connecting to the \\has1\photos I notices strange &lt;span class=&quot;caps&quot;&gt;CPU&lt;/span&gt; utilization on nas1, &lt;span class=&quot;caps&quot;&gt;CPU&lt;/span&gt; was pegged at 100% by two processed: convert and ffmpeg. Ahhhh! Seems like Synology&amp;#8217;s Picture Sharing functionality was converting images on the fly generating thumbs, pegging &lt;span class=&quot;caps&quot;&gt;CPU&lt;/span&gt;, and making it a bottleneck to the overall throughput of the system. At least I am glad I bought 209 model and not 210j with slower &lt;span class=&quot;caps&quot;&gt;CPU&lt;/span&gt;.&lt;/p&gt;
+&lt;p&gt;I disable the Photo Sharing functionality through the web management interface, and killed all running convert and ffmpeg processes.  Those processed kept spawning up, so to figure out which process was responsible I installed htop (#ipkg install htop), displayed proecessed in tree view&lt;/p&gt;
+&lt;p&gt;Repeating the test with one 4G file timing the copy operation to an &lt;span class=&quot;caps&quot;&gt;SMB&lt;/span&gt; mounted share on Mac:&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;/images/smb-nas.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;/images/smb-mac.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+&lt;h2&gt;Using Mac file share (&lt;span class=&quot;caps&quot;&gt;APF&lt;/span&gt; Protocol)&lt;/h2&gt;
+&lt;p&gt;&lt;img src=&quot;/images/afpd-nas.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;/images/afpd-mac.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+&lt;h2&gt;Conclusion&lt;/h2&gt;
+&lt;ul&gt;
+	&lt;li&gt;Synology 209 &lt;span class=&quot;caps&quot;&gt;NAS&lt;/span&gt; server is a budget priced &lt;span class=&quot;caps&quot;&gt;NAS&lt;/span&gt; server and as such it comes with limitation: namely the performance of the system is often &lt;span class=&quot;caps&quot;&gt;CPU&lt;/span&gt; bound.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;ul&gt;
+	&lt;li&gt;When copying initial files to &lt;span class=&quot;caps&quot;&gt;NAS&lt;/span&gt;, make sure to disable all services that may cause &lt;span class=&quot;caps&quot;&gt;CPU&lt;/span&gt; load, such as image thumbnail generation (See admin guide)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;ul&gt;
+	&lt;li&gt;Avoid using transfer protocols that involve &lt;span class=&quot;caps&quot;&gt;SSH&lt;/span&gt; keys (expensive &lt;span class=&quot;caps&quot;&gt;CPU&lt;/span&gt; operation on Synology).&lt;/li&gt;
+&lt;/ul&gt;
+&lt;ul&gt;
+	&lt;li&gt;The fastest bulk copy method I discovered was &lt;span class=&quot;caps&quot;&gt;FTP&lt;/span&gt; with multiple simultaneous file uploads.&lt;/li&gt;
+&lt;/ul&gt;</content>
+ </entry>
+ 
+ <entry>
+   <title>My favorite git log formatting</title>
+   <link href="http://mamykin.com/2010/03/28/favorite-git-log-formatting.html"/>
+   <updated>2010-03-28T00:00:00-04:00</updated>
+   <id>http://mamykincom/2010/03/28/favorite-git-log-formatting</id>
+   <content type="html">&lt;h1&gt;My favorite git log formatting&lt;/h1&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;bash&quot;&gt;git log --graph --pretty&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;format:&lt;span class=&quot;s2&quot;&gt;&amp;quot;%Creset%h %aN %Cred%d %Cblue%s&amp;quot;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;&lt;p&gt;or create an alias in your ~/.bash_profile&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;bash&quot;&gt;&lt;span class=&quot;nb&quot;&gt;alias &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;gl&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&amp;#39;git log --graph --pretty=format:&amp;quot;%Creset%h %aN %Cred%d %Cblue%s&amp;quot;&amp;#39;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;&lt;p&gt;&lt;img src=&quot;/images/git_log_output.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;For a small project where you have just a few collaborators you may consider replacing the author name with the initials to save space. .mailmap file to the rescue! (see git shortlog &amp;#8212;help for the structure of the file).&lt;br /&gt;
+Create .mailmap file at the root of the git repository:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;bash&quot;&gt;&lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;HS &amp;lt;homer@simpsons.tv&amp;gt;&amp;quot;&lt;/span&gt; &amp;gt;&amp;gt; .mailmap
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;&lt;p&gt;and the output of gl alias is much nicer. Enjoy.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Update:&lt;/strong&gt;&lt;br /&gt;
+I came across &lt;a href=&quot;http://www.jukie.net/bart/blog/pimping-out-git-log&quot;&gt;Bart&amp;#8217;s Blog&lt;/a&gt; post with a bit more &lt;br /&gt;
+elaborate (and prettier to my eyes) format. Bart also shows how you can setup git alias (as oppose to bash alias)&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;bash&quot;&gt;git config --global alias.lg &lt;span class=&quot;s2&quot;&gt;&amp;quot;log --graph --pretty=format:&amp;#39;%Creset%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)&amp;lt;%an&amp;gt;%Creset&amp;#39; --abbrev-commit --date=relative&amp;quot;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;&lt;p&gt;To use the alias do&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;bash&quot;&gt;git gl
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;</content>
+ </entry>
+ 
+ <entry>
+   <title>Pause/sleep substitude in DOS batch file</title>
+   <link href="http://mamykin.com/2009/08/18/pause-sleep-substitute-in-dos-batch-file.html"/>
+   <updated>2009-08-18T00:00:00-04:00</updated>
+   <id>http://mamykincom/2009/08/18/pause-sleep-substitute-in-dos-batch-file</id>
+   <content type="html">&lt;h1&gt;Pause/sleep substitude in &lt;span class=&quot;caps&quot;&gt;DOS&lt;/span&gt; batch file&lt;/h1&gt;
+&lt;p&gt;It is beyond me why Windows batch files don&amp;#8217;t have a built in sleep command.&lt;/p&gt;
+&lt;p&gt;I know it is a part of the Windows Resource Kit, but when installing&lt;br /&gt;
+extra pack is not an option, you can always resort &lt;a href=&quot;http://malektips.com/dos0017.html&quot;&gt;to using ping&lt;/a&gt; as a poor man&amp;#8217;s substitute for sleep.&lt;/p&gt;
+&lt;p&gt;For example this command will effectively sleep for 15 seconds:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;bat&quot;&gt;ping &lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;.&lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;.&lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;.&lt;span class=&quot;m&quot;&gt;1&lt;/span&gt; -n &lt;span class=&quot;m&quot;&gt;1&lt;/span&gt; -w &lt;span class=&quot;m&quot;&gt;15000&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;NUL&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;</content>
+ </entry>
+ 
+ <entry>
+   <title>How to build Sun JDK 1.6 from source on Windows</title>
+   <link href="http://mamykin.com/2009/08/12/how-to-build-sun-jdk-1.6-from-source-on-windows.html"/>
+   <updated>2009-08-12T00:00:00-04:00</updated>
+   <id>http://mamykincom/2009/08/12/how-to-build-sun-jdk-1.6-from-source-on-windows</id>
+   <content type="html">&lt;h1&gt;How to build Sun &lt;span class=&quot;caps&quot;&gt;JDK&lt;/span&gt; 1.6 from source on Windows&lt;/h1&gt;
+&lt;p&gt;This walkthrough is meant to be an additional information resource with clarifications and tips on how to build the Sun&amp;#8217;s &lt;span class=&quot;caps&quot;&gt;JDK&lt;/span&gt; 1.6 on Windows. It is not an all encompusing guide on the build, please read the official build instructions page here. However the official build instructions are sometimes unclear on certain things, or just not as up to date, and it took me awhile to google through all the errors. Hopefully you will be able to avoid the same pitfalls by following this walk through.&lt;/p&gt;
+&lt;p&gt;Initial reading:&lt;br /&gt;
+&lt;a href=&quot;http://download.java.net/jdk6/source/&quot;&gt;Download &lt;span class=&quot;caps&quot;&gt;JDK&lt;/span&gt; 1.6 source&lt;/a&gt;&lt;br /&gt;
+&lt;a href=&quot;http://download.java.net/jdk6/6u15/promoted/b03/docs/build/README-builds.html&quot;&gt;Official build instructions&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;This guide has been tested with &lt;span class=&quot;caps&quot;&gt;JDK&lt;/span&gt; 1.6u15 on Windows XP, with &lt;span class=&quot;caps&quot;&gt;CYGWIN&lt;/span&gt;.&lt;/p&gt;
+&lt;p&gt;What you will need:&lt;br /&gt;
+Download &lt;span class=&quot;caps&quot;&gt;JDK&lt;/span&gt; source jar from the link above. The file is called: jdk-6u15-fcs-src-b03-jrl-02_jul_2009.jar&lt;br /&gt;
+Download &lt;span class=&quot;caps&quot;&gt;JDK&lt;/span&gt; source binaries jar from the link above: File: jdk-6u15-fcs-bin-b03-jrl-02_jul_2009.jar&lt;br /&gt;
+I also downloaded Mozilla Binaries for Windows but I dont think it is necessary.&lt;/p&gt;
+&lt;p&gt;1) Unarchive the source and the source binaries into &lt;b&gt;&lt;strong&gt;the same&lt;/strong&gt;&lt;/b&gt; directory.&lt;br /&gt;
+Example:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;bat&quot;&gt;java -jar jdk&lt;span class=&quot;m&quot;&gt;-6&lt;/span&gt;u&lt;span class=&quot;m&quot;&gt;15&lt;/span&gt;-fcs-src-b&lt;span class=&quot;m&quot;&gt;03&lt;/span&gt;-jrl&lt;span class=&quot;m&quot;&gt;-02&lt;/span&gt;_jul_&lt;span class=&quot;m&quot;&gt;2009&lt;/span&gt;.jar
+java -jar jdk&lt;span class=&quot;m&quot;&gt;-6&lt;/span&gt;u&lt;span class=&quot;m&quot;&gt;15&lt;/span&gt;-fcs-bin-b&lt;span class=&quot;m&quot;&gt;03&lt;/span&gt;-jrl&lt;span class=&quot;m&quot;&gt;-02&lt;/span&gt;_jul_&lt;span class=&quot;m&quot;&gt;2009&lt;/span&gt;.jar
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;&lt;p&gt;Pick the same destination directory for both, in this walk through I will use C:\Misc\jdk6build\workspace&lt;/p&gt;
+&lt;p&gt;2) Install &lt;span class=&quot;caps&quot;&gt;CYGWIN&lt;/span&gt; if you don&amp;#8217;t already have it. Even if you do, you may want to rerun cygwin&amp;#8217;s setup.exe and make sure you have all development tools installed from Devel category.&lt;/p&gt;
+&lt;p&gt;3) Downgrade CYGWIN&amp;#8217;s make utility to v3.80&lt;br /&gt;
+Currently cygwin includes make v3.81, which discontinued its support for paths in C:/path/path/path format. However the &lt;span class=&quot;caps&quot;&gt;JDK&lt;/span&gt; build make files rely heavily on this path format. You can get and compile make v3.80 from source or goggle the web for a precompiled binaries.&lt;br /&gt;
+&lt;insert link to download precompiled binary&gt;&lt;/p&gt;
+&lt;p&gt;Validate from cmd:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;bat&quot;&gt;C:\Misc\jdk&lt;span class=&quot;m&quot;&gt;6&lt;/span&gt;build\workspace&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;make&lt;/span&gt; -version
+GNU Make &lt;span class=&quot;m&quot;&gt;3&lt;/span&gt;.&lt;span class=&quot;m&quot;&gt;80&lt;/span&gt;
+...
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;&lt;p&gt;3) Install Bootstrap &lt;span class=&quot;caps&quot;&gt;JDK&lt;/span&gt;.&lt;/p&gt;
+&lt;p&gt;Even though the build instructions specify it should be a 1.5 &lt;span class=&quot;caps&quot;&gt;JDK&lt;/span&gt;, you really need 1.6 &lt;span class=&quot;caps&quot;&gt;JDK&lt;/span&gt;, or you will get an error during dev-sanity target. If you already have 1.6 &lt;span class=&quot;caps&quot;&gt;JDK&lt;/span&gt; installed you can use that install.&lt;/p&gt;
+&lt;p&gt;4) Install Microsoft DirectX &lt;span class=&quot;caps&quot;&gt;SDK&lt;/span&gt;.&lt;/p&gt;
+&lt;p&gt;There is nothing special about this install (see build instructions for the &lt;span class=&quot;caps&quot;&gt;URL&lt;/span&gt;), download, install it and remember the path to the install. Something like C:\Program Files\Microsoft DirectX 9.0 &lt;span class=&quot;caps&quot;&gt;SDK&lt;/span&gt; (Summer 2004)&lt;/p&gt;
+&lt;p&gt;5) Open up a windows command line prompt (cmd).&lt;/p&gt;
+&lt;p&gt;It looks like the build system needs to be invoked from windows command line, not cygwin shell, which was a suprprise to me. I did not realize it was possible to call cygwin utilities from dos command line, I always used bat shell&amp;#8230; anyway, back to cmd:&lt;/p&gt;
+&lt;p&gt;Double check your &lt;span class=&quot;caps&quot;&gt;PATH&lt;/span&gt; environment variable. What you want is the cygwin path to be after the path to VS2003 binaries, otherwise at some point in the build you will get an error about inability to determine linker&amp;#8217;s version. It is because some make file calls &amp;#8220;link&amp;#8221; command which resolves to cygwin&amp;#8217;s link, not VS2003. I would actually advise you to reset it clean, to get rid off (in my case for example from UnxUtils in the path) other settings that may interfer.&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;bat&quot;&gt;&lt;span class=&quot;k&quot;&gt;Set&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;PATH&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;%SystemRoot%&lt;/span&gt;\system&lt;span class=&quot;m&quot;&gt;32&lt;/span&gt;;c:\cygwin\bin
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;&lt;p&gt;6) Setup VS2003 environment variables:&lt;/p&gt;
+&lt;p&gt;Run vsvars32.bat for VS2003:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;bat&quot;&gt;C:\Misc\jdk&lt;span class=&quot;m&quot;&gt;6&lt;/span&gt;build\workspace&amp;gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;\Program Files\Microsoft Visual Studio .NET 2003\Common7\Tools\vsvars32.bat&amp;quot;&lt;/span&gt;
+Setting environment &lt;span class=&quot;k&quot;&gt;for&lt;/span&gt; using Microsoft Visual Studio .NET &lt;span class=&quot;m&quot;&gt;2003&lt;/span&gt; tools.
+(&lt;span class=&quot;k&quot;&gt;If&lt;/span&gt; you have another version of Visual Studio or Visual C++ installed and wish
+to use its tools from the command line&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; run vcvars&lt;span class=&quot;m&quot;&gt;32&lt;/span&gt;.bat &lt;span class=&quot;k&quot;&gt;for&lt;/span&gt; that version.)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;&lt;p&gt;Validate by running cl and link. Both should print Microsoft copyright.&lt;/p&gt;
+&lt;p&gt;7) Set necessary environment variables&lt;/p&gt;
+&lt;p&gt;I was able to get by by setting just ALT_BOOTDIR and ALT_DXSDK_PATH, you might need to set more variables, see the official build instructions for the full list.&lt;/p&gt;
+&lt;p&gt;The trick here is that the variables need to be set in cygwin&amp;#8217;s &amp;#8220;mixed&amp;#8221; path format, C:/&lt;span class=&quot;caps&quot;&gt;DIRECTO&lt;/span&gt;~/&lt;span class=&quot;caps&quot;&gt;SUBDIREC&lt;/span&gt;~/file, which can be calculated using cygpath -s -m &amp;quot;&amp;quot;&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;bat&quot;&gt;C:\Misc\jdk&lt;span class=&quot;m&quot;&gt;6&lt;/span&gt;build\workspace&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cygpath&lt;/span&gt; -s -m &lt;span class=&quot;s2&quot;&gt;&amp;quot;C:\Program Files\Microsoft DirectX 9.0 SDK (Summer 2004)&amp;quot;&lt;/span&gt;
+C:&lt;span class=&quot;n&quot;&gt;/PROGRA~1/MICROS~1.0SD&lt;/span&gt;
+C:\Misc\jdk&lt;span class=&quot;m&quot;&gt;6&lt;/span&gt;build\workspace&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;set&lt;/span&gt; ALT_DXSDK_PATH&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;C:&lt;span class=&quot;n&quot;&gt;/PROGRA~1/MICROS~1.0SD&lt;/span&gt;
+C:\Misc\jdk&lt;span class=&quot;m&quot;&gt;6&lt;/span&gt;build\workspace&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cygpath&lt;/span&gt; -s -m &lt;span class=&quot;s2&quot;&gt;&amp;quot;C:\Program Files\Java\jdk1.6.0_15&amp;quot;&lt;/span&gt;
+C:&lt;span class=&quot;n&quot;&gt;/PROGRA~1/Java/JDK16~4.0_1&lt;/span&gt;
+C:\Misc\jdk&lt;span class=&quot;m&quot;&gt;6&lt;/span&gt;build\workspace&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;set&lt;/span&gt; ALT_BOOTDIR&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;C:&lt;span class=&quot;n&quot;&gt;/PROGRA~1/Java/JDK16~4.0_1&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;&lt;p&gt;8 ) Run dev-sanity target and fix all warnings/errors&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;bat&quot;&gt;C:\Misc\jdk&lt;span class=&quot;m&quot;&gt;6&lt;/span&gt;build\workspace&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cd&lt;/span&gt; control\make
+C:\Misc\jdk&lt;span class=&quot;m&quot;&gt;6&lt;/span&gt;build\workspace\control\make&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;make&lt;/span&gt; dev-sanity ARCH_DATA_MODEL&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;32&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;&lt;p&gt;In my case I had to unset &lt;span class=&quot;caps&quot;&gt;CLASSPATH&lt;/span&gt; and JAVA_HOME env variables.&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;bat&quot;&gt;C:\Misc\jdk&lt;span class=&quot;m&quot;&gt;6&lt;/span&gt;build\workspace\control\make&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;set&lt;/span&gt; CLASSPATH&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;
+C:\Misc\jdk&lt;span class=&quot;m&quot;&gt;6&lt;/span&gt;build\workspace\control\make&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;set&lt;/span&gt; JAVA_HOME&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;&lt;p&gt;9) Finally kick off the build and go get yourself a nice beverage, you will be staring at it for a while:)&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;bat&quot;&gt;C:\Misc\jdk&lt;span class=&quot;m&quot;&gt;6&lt;/span&gt;build\workspace\control\make&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;make&lt;/span&gt; dev ARCH_DATA_MODEL&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;32&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;</content>
+ </entry>
+ 
+ 
+</feed>

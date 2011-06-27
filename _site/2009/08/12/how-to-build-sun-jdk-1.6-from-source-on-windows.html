@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en-us">
+<head>
+   <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+   <title>How to build Sun JDK 1.6 from source on Windows</title>
+   <meta name="author" content="Kliment Mamykin" />
+
+   <!-- syntax highlighting CSS -->
+   <link rel="stylesheet" href="/css/syntax.css" type="text/css" />
+
+   <!-- Homepage CSS -->
+   <link rel="stylesheet" href="/css/screen.css" type="text/css" media="screen, projection" />
+
+   <!-- Typekit -->
+   <script type="text/javascript" src="http://use.typekit.com/jpd0pfm.js"></script>
+   <script type="text/javascript">try{Typekit.load();}catch(e){}</script>
+</head>
+<body>
+
+<div class="site">
+  <div class="title">
+    <a href="/">Kliment Mamykin</a>
+    <a class="extra" href="/">home</a>
+  </div>
+  
+  <div id="post">
+<h1>How to build Sun <span class="caps">JDK</span> 1.6 from source on Windows</h1>
+<p>This walkthrough is meant to be an additional information resource with clarifications and tips on how to build the Sun&#8217;s <span class="caps">JDK</span> 1.6 on Windows. It is not an all encompusing guide on the build, please read the official build instructions page here. However the official build instructions are sometimes unclear on certain things, or just not as up to date, and it took me awhile to google through all the errors. Hopefully you will be able to avoid the same pitfalls by following this walk through.</p>
+<p>Initial reading:<br />
+<a href="http://download.java.net/jdk6/source/">Download <span class="caps">JDK</span> 1.6 source</a><br />
+<a href="http://download.java.net/jdk6/6u15/promoted/b03/docs/build/README-builds.html">Official build instructions</a></p>
+<p>This guide has been tested with <span class="caps">JDK</span> 1.6u15 on Windows XP, with <span class="caps">CYGWIN</span>.</p>
+<p>What you will need:<br />
+Download <span class="caps">JDK</span> source jar from the link above. The file is called: jdk-6u15-fcs-src-b03-jrl-02_jul_2009.jar<br />
+Download <span class="caps">JDK</span> source binaries jar from the link above: File: jdk-6u15-fcs-bin-b03-jrl-02_jul_2009.jar<br />
+I also downloaded Mozilla Binaries for Windows but I dont think it is necessary.</p>
+<p>1) Unarchive the source and the source binaries into <b><strong>the same</strong></b> directory.<br />
+Example:</p>
+<div class="highlight"><pre><code class="bat">java -jar jdk<span class="m">-6</span>u<span class="m">15</span>-fcs-src-b<span class="m">03</span>-jrl<span class="m">-02</span>_jul_<span class="m">2009</span>.jar
+java -jar jdk<span class="m">-6</span>u<span class="m">15</span>-fcs-bin-b<span class="m">03</span>-jrl<span class="m">-02</span>_jul_<span class="m">2009</span>.jar
+</code></pre>
+</div><p>Pick the same destination directory for both, in this walk through I will use C:\Misc\jdk6build\workspace</p>
+<p>2) Install <span class="caps">CYGWIN</span> if you don&#8217;t already have it. Even if you do, you may want to rerun cygwin&#8217;s setup.exe and make sure you have all development tools installed from Devel category.</p>
+<p>3) Downgrade CYGWIN&#8217;s make utility to v3.80<br />
+Currently cygwin includes make v3.81, which discontinued its support for paths in C:/path/path/path format. However the <span class="caps">JDK</span> build make files rely heavily on this path format. You can get and compile make v3.80 from source or goggle the web for a precompiled binaries.<br />
+<insert link to download precompiled binary></p>
+<p>Validate from cmd:</p>
+<div class="highlight"><pre><code class="bat">C:\Misc\jdk<span class="m">6</span>build\workspace<span class="p">&gt;</span><span class="n">make</span> -version
+GNU Make <span class="m">3</span>.<span class="m">80</span>
+...
+</code></pre>
+</div><p>3) Install Bootstrap <span class="caps">JDK</span>.</p>
+<p>Even though the build instructions specify it should be a 1.5 <span class="caps">JDK</span>, you really need 1.6 <span class="caps">JDK</span>, or you will get an error during dev-sanity target. If you already have 1.6 <span class="caps">JDK</span> installed you can use that install.</p>
+<p>4) Install Microsoft DirectX <span class="caps">SDK</span>.</p>
+<p>There is nothing special about this install (see build instructions for the <span class="caps">URL</span>), download, install it and remember the path to the install. Something like C:\Program Files\Microsoft DirectX 9.0 <span class="caps">SDK</span> (Summer 2004)</p>
+<p>5) Open up a windows command line prompt (cmd).</p>
+<p>It looks like the build system needs to be invoked from windows command line, not cygwin shell, which was a suprprise to me. I did not realize it was possible to call cygwin utilities from dos command line, I always used bat shell&#8230; anyway, back to cmd:</p>
+<p>Double check your <span class="caps">PATH</span> environment variable. What you want is the cygwin path to be after the path to VS2003 binaries, otherwise at some point in the build you will get an error about inability to determine linker&#8217;s version. It is because some make file calls &#8220;link&#8221; command which resolves to cygwin&#8217;s link, not VS2003. I would actually advise you to reset it clean, to get rid off (in my case for example from UnxUtils in the path) other settings that may interfer.</p>
+<div class="highlight"><pre><code class="bat"><span class="k">Set</span> <span class="nv">PATH</span><span class="o">=</span><span class="nv">%SystemRoot%</span>\system<span class="m">32</span>;c:\cygwin\bin
+</code></pre>
+</div><p>6) Setup VS2003 environment variables:</p>
+<p>Run vsvars32.bat for VS2003:</p>
+<div class="highlight"><pre><code class="bat">C:\Misc\jdk<span class="m">6</span>build\workspace&gt;<span class="s2">&quot;\Program Files\Microsoft Visual Studio .NET 2003\Common7\Tools\vsvars32.bat&quot;</span>
+Setting environment <span class="k">for</span> using Microsoft Visual Studio .NET <span class="m">2003</span> tools.
+(<span class="k">If</span> you have another version of Visual Studio or Visual C++ installed and wish
+to use its tools from the command line<span class="p">,</span> run vcvars<span class="m">32</span>.bat <span class="k">for</span> that version.)
+</code></pre>
+</div><p>Validate by running cl and link. Both should print Microsoft copyright.</p>
+<p>7) Set necessary environment variables</p>
+<p>I was able to get by by setting just ALT_BOOTDIR and ALT_DXSDK_PATH, you might need to set more variables, see the official build instructions for the full list.</p>
+<p>The trick here is that the variables need to be set in cygwin&#8217;s &#8220;mixed&#8221; path format, C:/<span class="caps">DIRECTO</span>~/<span class="caps">SUBDIREC</span>~/file, which can be calculated using cygpath -s -m &quot;&quot;</p>
+<div class="highlight"><pre><code class="bat">C:\Misc\jdk<span class="m">6</span>build\workspace<span class="p">&gt;</span><span class="n">cygpath</span> -s -m <span class="s2">&quot;C:\Program Files\Microsoft DirectX 9.0 SDK (Summer 2004)&quot;</span>
+C:<span class="n">/PROGRA~1/MICROS~1.0SD</span>
+C:\Misc\jdk<span class="m">6</span>build\workspace<span class="p">&gt;</span><span class="n">set</span> ALT_DXSDK_PATH<span class="o">=</span>C:<span class="n">/PROGRA~1/MICROS~1.0SD</span>
+C:\Misc\jdk<span class="m">6</span>build\workspace<span class="p">&gt;</span><span class="n">cygpath</span> -s -m <span class="s2">&quot;C:\Program Files\Java\jdk1.6.0_15&quot;</span>
+C:<span class="n">/PROGRA~1/Java/JDK16~4.0_1</span>
+C:\Misc\jdk<span class="m">6</span>build\workspace<span class="p">&gt;</span><span class="n">set</span> ALT_BOOTDIR<span class="o">=</span>C:<span class="n">/PROGRA~1/Java/JDK16~4.0_1</span>
+</code></pre>
+</div><p>8 ) Run dev-sanity target and fix all warnings/errors</p>
+<div class="highlight"><pre><code class="bat">C:\Misc\jdk<span class="m">6</span>build\workspace<span class="p">&gt;</span><span class="n">cd</span> control\make
+C:\Misc\jdk<span class="m">6</span>build\workspace\control\make<span class="p">&gt;</span><span class="n">make</span> dev-sanity ARCH_DATA_MODEL<span class="o">=</span><span class="m">32</span>
+</code></pre>
+</div><p>In my case I had to unset <span class="caps">CLASSPATH</span> and JAVA_HOME env variables.</p>
+<div class="highlight"><pre><code class="bat">C:\Misc\jdk<span class="m">6</span>build\workspace\control\make<span class="p">&gt;</span><span class="n">set</span> CLASSPATH<span class="o">=</span>
+C:\Misc\jdk<span class="m">6</span>build\workspace\control\make<span class="p">&gt;</span><span class="n">set</span> JAVA_HOME<span class="o">=</span>
+</code></pre>
+</div><p>9) Finally kick off the build and go get yourself a nice beverage, you will be staring at it for a while:)</p>
+<div class="highlight"><pre><code class="bat">C:\Misc\jdk<span class="m">6</span>build\workspace\control\make<span class="p">&gt;</span><span class="n">make</span> dev ARCH_DATA_MODEL<span class="o">=</span><span class="m">32</span>
+</code></pre>
+</div>
+</div>
+
+<div id="related">
+  <h2>Related Posts</h2>
+  <ul class="posts">
+    
+      <li><span>01 Sep 2010</span> &raquo; <a href="/2010/09/01/synology-209-nas-server-performance-testing.html">Synology 209 NAS Server performance testing</a></li>
+    
+      <li><span>28 Mar 2010</span> &raquo; <a href="/2010/03/28/favorite-git-log-formatting.html">My favorite git log formatting</a></li>
+    
+      <li><span>18 Aug 2009</span> &raquo; <a href="/2009/08/18/pause-sleep-substitute-in-dos-batch-file.html">Pause/sleep substitude in DOS batch file</a></li>
+    
+  </ul>
+</div>
+  
+  <div class="footer">
+    <div class="contact">
+      <p>
+        Kliment Mamykin<br />
+        Cofounder of <a href="http://qrio.us/">Qrious</a><br />
+        &#107;&#109;&#097;&#109;&#121;&#107;&#064;&#113;&#114;&#105;&#111;&#046;&#117;&#115;
+      </p>
+    </div>
+    <div class="contact">
+      <p>
+        <a href="http://github.com/kmamykin">github.com/kmamykin</a><br />
+        <a href="http://twitter.com/kmamyk">twitter.com/kmamyk</a><br />
+        <a href="http://facebook.com/kmamyk">facebook.com/kmamyk</a><br />
+        <a href="http://linkedin.com/in/kmamyk">linkedin.com/in/kmamyk</a><br />
+        <a href="http://flickr.com/photos/kmamyk/">flickr.com/photos/kmamyk</a>
+      </p>
+    </div>
+    <div class="rss">
+      <a href="http://feeds.feedburner.com/kmamyk">
+        <img src="/images/rss.png" alt="Subscribe to RSS Feed" />
+      </a>
+    </div>
+  </div>
+</div>
+
+<a href="http://github.com/kmamykin/mamykin.com"><img style="position: absolute; top: 0; right: 0; border: 0;" src="http://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png" alt="Fork me on GitHub" /></a>
+
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-20522581-6']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+
+</body>
+</html>
