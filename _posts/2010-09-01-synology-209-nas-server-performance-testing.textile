@@ -1,52 +1,101 @@
+---
+layout: post
+title: Synology 209 NAS Server performance testing
+---
+
+h1. {{ page.title }}
+
 I have recently purchased Synology 209 NAS server which got a lot of good reviews on newegg.com. 
-Before I committed to this particular piece of hardware, I spend some time researching which particular model to choose (210j - newer but slower CPU or 209 - with a bit beefier CPU), which drives to pick (RPM, cache size, etc). I ended up buying 209 model with 2 Western Digital Green Caviar 1.5TB 5400RPM 64M cache drives.
 
-When the package arrived, giggling like a kid on Christmas, I opened it up, install the drives, booted and configured it according to the instructions. Now it is time to back something up! (and I had a lot of files sprinkled around on my mulitple laptops and desktops).
+Before I committed to this particular piece of hardware, I spend some time researching which particular model to choose (210j - newer but slower CPU or 209 - with a bit beefier CPU), which drives to pick (RPM, cache size, etc).  I ended up buying 209 model with 2 Western Digital Green Caviar 1.5TB 5400RPM 64M cache drives.
 
-But I was quickly deflated when I was trying to copy 160G of raw DV video from my Ubunty box. The initial attempt was using CIFS share from my nas mounted on the linux box. I was getting ~5MB/s throughput! That's it? WTF?
+When the package arrived, giggling like a kid on Christmas, I opened it up, install the drives, booted and configured it according to the instructions. Now it is time to back something up!  (and I had a lot of files sprinkled around on my mulitple laptops and desktops).
+
+But I was quickly deflated when I was trying to copy 160G of raw DV video from my Ubunty box.  The initial attempt was using CIFS share from my nas mounted on the linux box. I was getting ~5MB/s throughput! That's it? WTF?
 
 I decited to do a little troubleshooting. 
-1) Test networking setup and throughput
-Everything here was attached to a cheap gigabit switch <link from newegg>. Just to make sure the connection was not operating in 100M mode (which may happen depending on NIC config, cabling, etc).
 
-a) The goal here is install one of the network throughput benchmarking tools on both ubuntu box and Synology NAS, we will use iperf <link> in this case.
-Enable SSH access to your NAS server using its management site. http://nas1:5000/
-Login as root to the console (You will be asked for the password):
-#ssh root@nas1
+h2. Test networking setup and throughput
+
+Everything here was attached to a cheap gigabit switch <link from newegg>.  Just to make sure the connection was not operating in 100M mode (which may happen depending on NIC config, cabling, etc).
+
+The goal here is install one of the network throughput benchmarking tools on both ubuntu box and Synology NAS, we will use iperf <link> in this case.
+
+h3. Install iperf
+
+Enable SSH access to your NAS server using its management site. http://nas1:5000/ Login as root to the console (You will be asked for the password):
+
+{% highlight bash %}
+ssh root@nas1
+{% endhighlight %}
+
 Install ipkg tool (which allows you to install other precompiled packages on your NAS). Instructions are found here <link>.
-#ipkg update
-#ipkg install iperf
+
+{% highlight bash %}
+ipkg update
+ipkg install iperf
+{% endhighlight %}
+
 
 If on Ubuntu:
-#sudo apt-get install iperf
+
+{% highlight bash %}
+sudo apt-get install iperf
+{% endhighlight %}
 
 If on Mac:
-#sudo port install iperf
 
-b) performing test
+{% highlight bash %}
+sudo port install iperf
+{% endhighlight %}
+
+
+h3. Performing test
+
 on nas1
-#iperf -s 
-<img src="http://mamykin.com/wp-content/uploads/2010/06/iperf-nas.png" alt="iperf-nas" title="iperf-nas" width="534" height="114" class="alignnone size-full wp-image-48" />
+
+{% highlight bash %}
+iperf -s 
+{% endhighlight %}
+
+
+!/images/iperf-nas.png!
+
 On my Mac:
-#iperf -c nas1 -f M
-<img src="http://mamykin.com/wp-content/uploads/2010/06/iperf-mac.png" alt="iperf-mac" title="iperf-mac" width="526" height="116" class="alignnone size-full wp-image-49" />
+
+{% highlight bash %}
+iperf -c nas1 -f M
+{% endhighlight %}
+
+
+!/images/iperf-mac.png!
 
 Overall throughput is around 70 MB/s, which is not stellar (the theoretical max on a Gigabit Ethernet is 125 MB/s) but respectable. I dont have jumbo frames configured <link>.
 
-2) Copying photos over CIFS
-While connecting to the \\has1\photos I notices strange CPU utilization on nas1, CPU was pegged at 100% by two processed: convert and ffmpeg. Ahhhh! Seems like Synology's Picture Sharing functionality was converting images on the fly generating thumbs, pegging CPU, and making it a bottleneck to the overall throughput of the system. At least I am glad I bought 209 model and not 210j with slower CPU. 
+h2. Copying photos over CIFS
 
-I disable the Photo Sharing functionality through the web management interface, and killed all running convert and ffmpeg processes.
-Those processed kept spawning up, so to figure out which process was responsible I installed htop (#ipkg install htop), displayed proecessed in tree view
+While connecting to the \\has1\photos I notices strange CPU utilization on nas1, CPU was pegged at 100% by two processed: convert and ffmpeg. Ahhhh! Seems like Synology's Picture Sharing functionality was converting images on the fly generating thumbs, pegging CPU, and making it a bottleneck to the overall throughput of the system. At least I am glad I bought 209 model and not 210j with slower CPU.
+
+I disable the Photo Sharing functionality through the web management interface, and killed all running convert and ffmpeg processes.  Those processed kept spawning up, so to figure out which process was responsible I installed htop (#ipkg install htop), displayed proecessed in tree view
 
 Repeating the test with one 4G file timing the copy operation to an SMB mounted share on Mac:
-<img src="http://mamykin.com/wp-content/uploads/2010/06/smb-nas.png" alt="smb-nas" title="smb-nas" width="746" height="113" class="alignnone size-full wp-image-60" />
-<img src="http://mamykin.com/wp-content/uploads/2010/06/smb-mac.png" alt="smb-mac" title="smb-mac" width="592" height="144" class="alignnone size-full wp-image-61" />
 
-3) Using Mac file share (APF Protocol)
-<img src="http://mamykin.com/wp-content/uploads/2010/06/afpd-nas.png" alt="afpd-nas" title="afpd-nas" width="841" height="114" class="alignnone size-full wp-image-57" />
-<img src="http://mamykin.com/wp-content/uploads/2010/06/afpd-mac.png" alt="afpd-mac" title="afpd-mac" width="663" height="70" class="alignnone size-full wp-image-53" />
-<img src="http://mamykin.com/wp-content/uploads/2010/06/afpd-nas-2files.png" alt="afpd-nas-2files" title="afpd-nas-2files" width="811" height="113" class="alignnone size-full wp-image-56" />
-<img src="http://mamykin.com/wp-content/uploads/2010/06/afpd-mac-2files-a.png" alt="afpd-mac-2files-a" title="afpd-mac-2files-a" width="677" height="75" class="alignnone size-full wp-image-55" />
-<img src="http://mamykin.com/wp-content/uploads/2010/06/afpd-mac-2files-b.png" alt="afpd-mac-2files-b" title="afpd-mac-2files-b" width="686" height="73" class="alignnone size-full wp-image-54" />
+!/images/smb-nas.png!
 
+!/images/smb-mac.png!
+
+h2. Using Mac file share (APF Protocol)
+
+!/images/afpd-nas.png!
+
+!/images/afpd-mac.png!
+
+h2. Conclusion
+
+* Synology 209 NAS server is a budget priced NAS server and as such it comes with limitation: namely the performance of the system is often CPU bound.
+
+* When copying initial files to NAS, make sure to disable all services that may cause CPU load, such as image thumbnail generation (See admin guide)
+
+* Avoid using transfer protocols that involve SSH keys (expensive CPU operation on Synology).
+
+* The fastest bulk copy method I discovered was FTP with multiple simultaneous file uploads.
