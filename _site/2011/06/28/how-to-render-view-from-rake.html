@@ -26,7 +26,7 @@
   <div id="post">
 <h1>How to render a Rails 3 view in a rake task</h1>
 <p>Recently I needed to render a Haml view into <span class="caps">HTML</span> from a rake task. Information on how to do that is kind of sparse for Rails 3.</p>
-<p>Googling turned out a few posts with slightly different variations on the solution, but most of them either a bit bloated, not working or using deprecated apis. You can read up on them <a href="http://jguimont.com/post/5582583230/how-to-render-a-full-page-template-in-a-rake-task-with">here</a> , <a href="http://snippets.aktagon.com/snippets/517-How-to-render-a-view-or-partial-from-a-Rake-task-model-or-anywhere">here</a>, <a href="http://stackoverflow.com/questions/3752454/rails-3-rendering-views-in-rake-task">here</a>, and <a href="http://stackoverflow.com/questions/4262044/rails-3-how-to-render-erb-template-in-rake-task">here</a></p>
+<p>Googling turned out a few posts with slightly different variations on the solution, but most of them either a bit bloated, not working or using deprecated apis. You can read up on them: <a href="http://jguimont.com/post/5582583230/how-to-render-a-full-page-template-in-a-rake-task-with">here</a> , <a href="http://snippets.aktagon.com/snippets/517-How-to-render-a-view-or-partial-from-a-Rake-task-model-or-anywhere">here</a>, <a href="http://stackoverflow.com/questions/3752454/rails-3-rendering-views-in-rake-task">here</a>, and <a href="http://stackoverflow.com/questions/4262044/rails-3-how-to-render-erb-template-in-rake-task">here</a></p>
 <script src="https://gist.github.com/1050726.js"> </script>
 </div>
 
@@ -42,6 +42,27 @@
     
   </ul>
 </div>
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+    var disqus_shortname = 'mamykin'; // required: replace example with your forum shortname
+
+    // The following are highly recommended additional parameters. Remove the slashes in front to use.
+    // var disqus_developer = 1; // developer mode is on
+    var disqus_identifier = '/2011/06/28/how-to-render-view-from-rake.html';
+    var disqus_url = 'http://mamykin.com/2011/06/28/how-to-render-view-from-rake.html';
+
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">blog comments powered by <span class="logo-disqus">Disqus</span></a>
+
   
   <div class="footer">
     <div class="contact">

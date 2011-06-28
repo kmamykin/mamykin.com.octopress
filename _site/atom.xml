@@ -4,7 +4,7 @@
  <title>Kliment Mamykin</title>
  <link href="http://mamykin.com/atom.xml" rel="self"/>
  <link href="http://mamykin.com/"/>
- <updated>2011-06-28T04:36:18-04:00</updated>
+ <updated>2011-06-28T05:47:01-04:00</updated>
  <id>http://mamykin.com/</id>
  <author>
    <name>Kliment Mamykin</name>
@@ -19,7 +19,7 @@
    <id>http://mamykincom/2011/06/28/how-to-render-view-from-rake</id>
    <content type="html">&lt;h1&gt;How to render a Rails 3 view in a rake task&lt;/h1&gt;
 &lt;p&gt;Recently I needed to render a Haml view into &lt;span class=&quot;caps&quot;&gt;HTML&lt;/span&gt; from a rake task. Information on how to do that is kind of sparse for Rails 3.&lt;/p&gt;
-&lt;p&gt;Googling turned out a few posts with slightly different variations on the solution, but most of them either a bit bloated, not working or using deprecated apis. You can read up on them &lt;a href=&quot;http://jguimont.com/post/5582583230/how-to-render-a-full-page-template-in-a-rake-task-with&quot;&gt;here&lt;/a&gt; , &lt;a href=&quot;http://snippets.aktagon.com/snippets/517-How-to-render-a-view-or-partial-from-a-Rake-task-model-or-anywhere&quot;&gt;here&lt;/a&gt;, &lt;a href=&quot;http://stackoverflow.com/questions/3752454/rails-3-rendering-views-in-rake-task&quot;&gt;here&lt;/a&gt;, and &lt;a href=&quot;http://stackoverflow.com/questions/4262044/rails-3-how-to-render-erb-template-in-rake-task&quot;&gt;here&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Googling turned out a few posts with slightly different variations on the solution, but most of them either a bit bloated, not working or using deprecated apis. You can read up on them: &lt;a href=&quot;http://jguimont.com/post/5582583230/how-to-render-a-full-page-template-in-a-rake-task-with&quot;&gt;here&lt;/a&gt; , &lt;a href=&quot;http://snippets.aktagon.com/snippets/517-How-to-render-a-view-or-partial-from-a-Rake-task-model-or-anywhere&quot;&gt;here&lt;/a&gt;, &lt;a href=&quot;http://stackoverflow.com/questions/3752454/rails-3-rendering-views-in-rake-task&quot;&gt;here&lt;/a&gt;, and &lt;a href=&quot;http://stackoverflow.com/questions/4262044/rails-3-how-to-render-erb-template-in-rake-task&quot;&gt;here&lt;/a&gt;&lt;/p&gt;
 &lt;script src=&quot;https://gist.github.com/1050726.js&quot;&gt; &lt;/script&gt;</content>
  </entry>
  

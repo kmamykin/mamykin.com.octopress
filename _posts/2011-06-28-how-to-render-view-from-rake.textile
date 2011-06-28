@@ -7,6 +7,6 @@ h1. {{ page.title }}
 
 Recently I needed to render a Haml view into HTML from a rake task. Information on how to do that is kind of sparse for Rails 3.
 
-Googling turned out a few posts with slightly different variations on the solution, but most of them either a bit bloated, not working or using deprecated apis. You can read up on them "here":http://jguimont.com/post/5582583230/how-to-render-a-full-page-template-in-a-rake-task-with , "here":http://snippets.aktagon.com/snippets/517-How-to-render-a-view-or-partial-from-a-Rake-task-model-or-anywhere, "here":http://stackoverflow.com/questions/3752454/rails-3-rendering-views-in-rake-task, and "here":http://stackoverflow.com/questions/4262044/rails-3-how-to-render-erb-template-in-rake-task
+Googling turned out a few posts with slightly different variations on the solution, but most of them either a bit bloated, not working or using deprecated apis. You can read up on them: "here":http://jguimont.com/post/5582583230/how-to-render-a-full-page-template-in-a-rake-task-with , "here":http://snippets.aktagon.com/snippets/517-How-to-render-a-view-or-partial-from-a-Rake-task-model-or-anywhere, "here":http://stackoverflow.com/questions/3752454/rails-3-rendering-views-in-rake-task, and "here":http://stackoverflow.com/questions/4262044/rails-3-how-to-render-erb-template-in-rake-task
 
 <script src="https://gist.github.com/1050726.js"> </script>
