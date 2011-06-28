@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en-us">
 <head>
    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
-   <title>How to render a Rails 3 view in a rake task</title>
+   <title>How to install vim's Janus plugin distro on Windows</title>
    <meta name="author" content="Kliment Mamykin" />
 
    <!-- syntax highlighting CSS -->
@@ -24,17 +24,20 @@
   </div>
   
   <div id="post">
-<h1>How to render a Rails 3 view in a rake task</h1>
-<p>Recently I needed to render a Haml view into <span class="caps">HTML</span> from a rake task. Information on how to do that is kind of sparse for Rails 3.</p>
-<p>Googling turned out a few posts with slightly different variations on the solution, but most of them either a bit bloated, not working or using deprecated apis. You can read up on them: <a href="http://jguimont.com/post/5582583230/how-to-render-a-full-page-template-in-a-rake-task-with">here</a> , <a href="http://snippets.aktagon.com/snippets/517-How-to-render-a-view-or-partial-from-a-Rake-task-model-or-anywhere">here</a>, <a href="http://stackoverflow.com/questions/3752454/rails-3-rendering-views-in-rake-task">here</a>, and <a href="http://stackoverflow.com/questions/4262044/rails-3-how-to-render-erb-template-in-rake-task">here</a></p>
-<script src="https://gist.github.com/1050726.js"> </script>
+<h1>How to install vim&#8217;s Janus plugin distro on Windows</h1>
+<p>I have been trying to exercise my vim muscle on Window <sup class="footnote" id="fnr1"><a href="#fn1">1</a></sup>, which you can certainly do with <a href="http://www.vim.org/download.php#pc">gVim</a>.</p>
+<p>On Mac/Ubuntu I have been using now quite popular <a href="https://github.com/carlhuda/janus">Janus</a> plugin collection, but its installation on Windows is not supported quite well. Luckily, <a href="http://wherethebitsroam.com/content/who-am-i">Jeff Williams</a> wrote a post how to beat Janus down to submission: <a href="http://wherethebitsroam.com/blogs/jeffw/gvim-janus-windows">gVim + Janus on Windows</a></p>
+<p>I have implemented Jeff&#8217;s changes on this <a href="https://github.com/kmamykin/janus/tree/windows-patches">branch</a></p>
+<p>This is work in progress, it would be nice to fix Commant-t plugin (which requires native compile) and ultimately fix Janus to support Windows out of the box, instead of this hack.</p>
+<h3>Side notes:</h3>
+<p id="fn1">No apologies for using Windows :) Use the best tool for the job, and some jobs require it.</p>
 </div>
 
 <div id="related">
   <h2>Related Posts</h2>
   <ul class="posts">
     
-      <li><span>28 Jun 2011</span> &raquo; <a href="/2011/06/28/vim-janus-on-windows.html">How to install vim's Janus plugin distro on Windows</a></li>
+      <li><span>28 Jun 2011</span> &raquo; <a href="/2011/06/28/how-to-render-view-from-rake.html">How to render a Rails 3 view in a rake task</a></li>
     
       <li><span>27 Jun 2011</span> &raquo; <a href="/2011/06/27/deploying-jekyll-blog-on-shared-host.html">How to deploy Jekyll blog to a shared host</a></li>
     
@@ -50,8 +53,8 @@
 
     // The following are highly recommended additional parameters. Remove the slashes in front to use.
     var disqus_developer = 1; // developer mode is on
-    var disqus_identifier = '/2011/06/28/how-to-render-view-from-rake.html';
-    var disqus_url = 'http://mamykin.com/2011/06/28/how-to-render-view-from-rake.html';
+    var disqus_identifier = '/2011/06/28/vim-janus-on-windows.html';
+    var disqus_url = 'http://mamykin.com/2011/06/28/vim-janus-on-windows.html';
 
     /* * * DON'T EDIT BELOW THIS LINE * * */
     (function() {

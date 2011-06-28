@@ -7,9 +7,12 @@ h1. {{ page.title }}
 
 I have been trying to exercise my vim muscle on Window [1], which you can certainly do with "gVim":http://www.vim.org/download.php#pc.
 
-On Mac I have been using now quite popular "Janus":https://github.com/carlhuda/janus plugin collection, but its installation on Windows is not supported quite well. Luckily, "Jeff Williams":http://wherethebitsroam.com/content/who-am-i wrote a post how to beat Janus down to submission: "gVim + Janus on Windows":http://wherethebitsroam.com/blogs/jeffw/gvim-janus-windows
+On Mac/Ubuntu I have been using now quite popular "Janus":https://github.com/carlhuda/janus plugin collection, but its installation on Windows is not supported quite well. Luckily, "Jeff Williams":http://wherethebitsroam.com/content/who-am-i wrote a post how to beat Janus down to submission: "gVim + Janus on Windows":http://wherethebitsroam.com/blogs/jeffw/gvim-janus-windows
 
 I have implemented Jeff's changes on this "branch":https://github.com/kmamykin/janus/tree/windows-patches
 
 This is work in progress, it would be nice to fix Commant-t plugin (which requires native compile) and ultimately fix Janus to support Windows out of the box, instead of this hack.
 
+h3. Side notes:
+
+p(#fn1). No apologies for using Windows :) Use the best tool for the job, and some jobs require it.

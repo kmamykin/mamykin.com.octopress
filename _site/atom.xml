@@ -4,13 +4,27 @@
  <title>Kliment Mamykin</title>
  <link href="http://mamykin.com/atom.xml" rel="self"/>
  <link href="http://mamykin.com/"/>
- <updated>2011-06-28T05:47:01-04:00</updated>
+ <updated>2011-06-28T13:47:44-04:00</updated>
  <id>http://mamykin.com/</id>
  <author>
    <name>Kliment Mamykin</name>
    <email>kmamyk@gmail.com</email>
  </author>
 
+ 
+ <entry>
+   <title>How to install vim's Janus plugin distro on Windows</title>
+   <link href="http://mamykin.com/2011/06/28/vim-janus-on-windows.html"/>
+   <updated>2011-06-28T00:00:00-04:00</updated>
+   <id>http://mamykincom/2011/06/28/vim-janus-on-windows</id>
+   <content type="html">&lt;h1&gt;How to install vim&amp;#8217;s Janus plugin distro on Windows&lt;/h1&gt;
+&lt;p&gt;I have been trying to exercise my vim muscle on Window &lt;sup class=&quot;footnote&quot; id=&quot;fnr1&quot;&gt;&lt;a href=&quot;#fn1&quot;&gt;1&lt;/a&gt;&lt;/sup&gt;, which you can certainly do with &lt;a href=&quot;http://www.vim.org/download.php#pc&quot;&gt;gVim&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;On Mac/Ubuntu I have been using now quite popular &lt;a href=&quot;https://github.com/carlhuda/janus&quot;&gt;Janus&lt;/a&gt; plugin collection, but its installation on Windows is not supported quite well. Luckily, &lt;a href=&quot;http://wherethebitsroam.com/content/who-am-i&quot;&gt;Jeff Williams&lt;/a&gt; wrote a post how to beat Janus down to submission: &lt;a href=&quot;http://wherethebitsroam.com/blogs/jeffw/gvim-janus-windows&quot;&gt;gVim + Janus on Windows&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;I have implemented Jeff&amp;#8217;s changes on this &lt;a href=&quot;https://github.com/kmamykin/janus/tree/windows-patches&quot;&gt;branch&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;This is work in progress, it would be nice to fix Commant-t plugin (which requires native compile) and ultimately fix Janus to support Windows out of the box, instead of this hack.&lt;/p&gt;
+&lt;h3&gt;Side notes:&lt;/h3&gt;
+&lt;p id=&quot;fn1&quot;&gt;No apologies for using Windows :) Use the best tool for the job, and some jobs require it.&lt;/p&gt;</content>
+ </entry>
  
  <entry>
    <title>How to render a Rails 3 view in a rake task</title>
