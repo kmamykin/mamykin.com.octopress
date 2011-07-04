@@ -1,0 +1,49 @@
+---
+layout: post
+title: How to build Sun JDK 1.6 from source on Windows
+---
+
+h1. {{ page.title }}
+
+h2. Overview
+
+h2. Updating Gemfile
+
+code. 
+> bundle update rails
+Bundler could not find find gem activesupport (= 3.1.0.rc3, runtime),which is required by gem multi_json (~> 1.0, runtime).
+
+code. 
+> bundle install
+Fetching source index for http://rubygems.org/
+You have requested:
+  rails ~> 3.1.0.rc4
+
+The bundle currently has rails locked at 3.0.9.
+Try running `bundle update rails`
+
+The approach I took is to comment out all my gems in Gemfile except
+those that are dependency of rails 3.1, update rails, and then uncomment
+gems one by one and deal with errors.
+
+For example, in my case linkedin gem was found to cause the problem
+depending on earlier versions of multi_json, where as rails 3.1 requires as a minimum
+1.0.2.
+
+Another approach is to rename the gemset (you are using rvm, aren't
+you?) to something else for reference and create an empty gemset with
+the original name. Then try to install the updated Gemfile with bundle
+install. (Note, you may need to remove Gemfile.lock before this)
+
+Running bundle install on a recreated gemset seems to be the cleaner
+approach, and that is the one I used.
+
+h3. Errors and Solutions
+
+undefined method `debug_rjs=' for ActionView::Base:Class
+
+This option was "removed in rails":https://github.com/rails/rails/commit/d8f23ca627df85b33fe8db87db5483c10b62bfe6
+You will need to remove a reference to it from config/environments/development.rb
+
+
+

@@ -4,13 +4,45 @@
  <title>Kliment Mamykin</title>
  <link href="http://mamykin.com/atom.xml" rel="self"/>
  <link href="http://mamykin.com/"/>
- <updated>2011-06-28T13:47:44-04:00</updated>
+ <updated>2011-07-04T01:19:25-04:00</updated>
  <id>http://mamykin.com/</id>
  <author>
    <name>Kliment Mamykin</name>
    <email>kmamyk@gmail.com</email>
  </author>
 
+ 
+ <entry>
+   <title>How to build Sun JDK 1.6 from source on Windows</title>
+   <link href="http://mamykin.com/2011/07/03/upgrading-to-rails31-rc4.html"/>
+   <updated>2011-07-03T00:00:00-04:00</updated>
+   <id>http://mamykincom/2011/07/03/upgrading-to-rails31-rc4</id>
+   <content type="html">&lt;h1&gt;How to build Sun &lt;span class=&quot;caps&quot;&gt;JDK&lt;/span&gt; 1.6 from source on Windows&lt;/h1&gt;
+&lt;h2&gt;Overview&lt;/h2&gt;
+&lt;h2&gt;Updating Gemfile&lt;/h2&gt;
+&lt;code&gt;&amp;gt; bundle update rails&lt;br /&gt;
+Bundler could not find find gem activesupport (= 3.1.0.rc3, runtime),which is required by gem multi_json (~&amp;gt; 1.0, runtime).&lt;/code&gt;&lt;code&gt;&amp;gt; bundle install&lt;br /&gt;
+Fetching source index for http://rubygems.org/&lt;br /&gt;
+You have requested:&lt;br /&gt;
+  rails ~&amp;gt; 3.1.0.rc4&lt;/code&gt;&lt;p&gt;The bundle currently has rails locked at 3.0.9.&lt;br /&gt;
+Try running `bundle update rails`&lt;/p&gt;
+&lt;p&gt;The approach I took is to comment out all my gems in Gemfile except&lt;br /&gt;
+those that are dependency of rails 3.1, update rails, and then uncomment&lt;br /&gt;
+gems one by one and deal with errors.&lt;/p&gt;
+&lt;p&gt;For example, in my case linkedin gem was found to cause the problem&lt;br /&gt;
+depending on earlier versions of multi_json, where as rails 3.1 requires as a minimum&lt;br /&gt;
+1.0.2.&lt;/p&gt;
+&lt;p&gt;Another approach is to rename the gemset (you are using rvm, aren&amp;#8217;t&lt;br /&gt;
+you?) to something else for reference and create an empty gemset with&lt;br /&gt;
+the original name. Then try to install the updated Gemfile with bundle&lt;br /&gt;
+install. (Note, you may need to remove Gemfile.lock before this)&lt;/p&gt;
+&lt;p&gt;Running bundle install on a recreated gemset seems to be the cleaner&lt;br /&gt;
+approach, and that is the one I used.&lt;/p&gt;
+&lt;h3&gt;Errors and Solutions&lt;/h3&gt;
+&lt;p&gt;undefined method `debug_rjs=&amp;#8217; for ActionView::Base:Class&lt;/p&gt;
+&lt;p&gt;This option was &lt;a href=&quot;https://github.com/rails/rails/commit/d8f23ca627df85b33fe8db87db5483c10b62bfe6&quot;&gt;removed in rails&lt;/a&gt;&lt;br /&gt;
+You will need to remove a reference to it from config/environments/development.rb&lt;/p&gt;</content>
+ </entry>
  
  <entry>
    <title>How to install vim's Janus plugin distro on Windows</title>
