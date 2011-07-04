@@ -46,4 +46,14 @@ This option was "removed in rails":https://github.com/rails/rails/commit/d8f23ca
 You will need to remove a reference to it from config/environments/development.rb
 
 
+If you are on *nix machine you may get:
+ 
+/home/kmamykin/.rvm/gems/ruby-1.9.2-p180@qrious/gems/execjs-1.2.0/lib/execjs/runtimes.rb:46:in `autodetect': Could not find a JavaScript runtime. See https://github.com/sstephenson/execjs for a list of available runtimes. (ExecJS::RuntimeUnavailable)
+        from /home/kmamykin/.rvm/gems/ruby-1.9.2-p180@qrious/gems/execjs-1.2.0/lib/execjs.rb:5:in `<module:ExecJS>'
+        from /home/kmamykin/.rvm/gems/ruby-1.9.2-p180@qrious/gems/execjs-1.2.0/lib/execjs.rb:4:in `<top (required)>'
+        from /home/kmamykin/.rvm/gems/ruby-1.9.2-p180@qrious/gems/coffee-script-2.2.0/lib/coffee_script.rb:1:in `require'
+
+In this case you need to install one of JavaScript runtimes, for example Node.js with
+
+sudo apt-get install nodejs
 
