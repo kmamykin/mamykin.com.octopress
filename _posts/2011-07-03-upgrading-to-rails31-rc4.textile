@@ -1,77 +1,95 @@
 ---
 layout: post
-title: How to build Sun JDK 1.6 from source on Windows
+title: Upgrading an existing app to Rails 3.1
 ---
 
 h1. {{ page.title }}
 
 h2. Overview
 
+This blog post documents the process of upgrading "Qrious app":http://qrio.us to Rails 3.1.0.rc4. While certain errors may be application/gems specific, I hope the overall approach may be usefull to other application.
+
+The process was split into two stages
+
+# Upgrading the rails gem, dealing and resolving gem dependencies and 
+# Switching to use the assets pipeline, sass/compass, deploying to heroku and Amazon S3/CloudFront.
+
 h2. Updating Gemfile
 
-code. 
-> bundle update rails
-Bundler could not find find gem activesupport (= 3.1.0.rc3, runtime),which is required by gem multi_json (~> 1.0, runtime).
+There is more then one way to do it. And, as a helper, generate a new rails 3.1 application and refer to its Gemfile and config files for reference.
 
-code. 
-> bundle install
+The initial attempt was to simply include rails 3.1 gems in Gemfile 
+
+{% highlight bash %}
+gem 'rails', '3.1.0.rc4'
+gem 'sass-rails', "~> 3.1.0.rc"
+gem 'coffee-script'
+gem 'uglifier'
+gem 'jquery-rails'
+{% endhighlight %}
+
+and update the project with @bundler update rails@:
+
+{% highlight bash %}
+$ bundle update rails
+Bundler could not find find gem activesupport (= 3.1.0.rc3, runtime), which is required by gem multi_json (~> 1.0, runtime).
+{% endhighlight %}
+
+Boom! Bundler could not resolve dependencies. It seems some other gem depends on multi_json gem with too narrow constraint on the version. (I later discovered it was linkedin gem).
+
+{% highlight bash %}
+$ bundle install
 Fetching source index for http://rubygems.org/
 You have requested:
-  rails ~> 3.1.0.rc4
+rails ~> 3.1.0.rc4
 
 The bundle currently has rails locked at 3.0.9.
 Try running `bundle update rails`
+{% endhighlight %}
 
-The approach I took is to comment out all my gems in Gemfile except
-those that are dependency of rails 3.1, update rails, and then uncomment
-gems one by one and deal with errors.
+Vicious cycle. I could have dug into the previously stable Gemfile.lock trying to manually track down the mismatched dependencies, but that did not seem like a particularly robust approach, especially since this unresolved dependency may not be the last. 
 
-For example, in my case linkedin gem was found to cause the problem
-depending on earlier versions of multi_json, where as rails 3.1 requires as a minimum
-1.0.2.
+Anothep approach you may try, is to comment out all gems in Gemfile except rails 3.1, update rails, and then uncomment gems one by one and deal with errors.
 
-Another approach is to rename the gemset (you are using rvm, aren't
-you?) to something else for reference and create an empty gemset with
-the original name. Then try to install the updated Gemfile with bundle
-install. (Note, you may need to remove Gemfile.lock before this)
+The approach that finally worked for me was to rename the gemset (you are using rvm, aren't you?) to something else for reference and create an empty gemset with the original name. Then try to install the updated Gemfile with bundle install. (Delte Gemfile.lock before this).
 
-Running bundle install on a recreated gemset seems to be the cleaner
-approach, and that is the one I used.
+This is a cleaner approach with a disadvantage that the other gems which had no version constraint specified in Gemfile will be installed with the latest version, and that may not be what you want. To mitigate it, take a look at your pre-3.1 Gemfile.lock and put a version constraint for the gems you dont want upgraded.
 
-Go through the tests output and fix deprecation warnings.
+Once the gems are installed, run the tests and go through the tests output and fix deprecation warnings.
 
-You might want to disable asset pipeline to test the app now. Inside
-config/application.rb put 
+You can also run the app with the assets pipeline disabled to make sure nothing is broken with the gems upgrade. Inside config/application.rb put:
 
-    # Disable the asset pipeline for now
-    config.assets.enabled = false # <== this is temporary, to make
-things work without the assets pipeline
+{% highlight ruby %}
+# Disable the asset pipeline for now
+config.assets.enabled = false # <== this is temporary
+{% endhighlight %}
 
+At theis point your application should be working as before the upgrage, with assets pipeline disabled.
 
 h3. Errors and Solutions
 
+{% highlight bash %}
 undefined method `debug_rjs=' for ActionView::Base:Class
+{% endhighlight %}
 
-This option was "removed in rails":https://github.com/rails/rails/commit/d8f23ca627df85b33fe8db87db5483c10b62bfe6
-You will need to remove a reference to it from config/environments/development.rb
-
+This option was "removed in rails":https://github.com/rails/rails/commit/d8f23ca627df85b33fe8db87db5483c10b62bfe6 You will need to remove a reference to it from config/environments/development.rb
 
 If you are on *nix machine you may get:
- 
+
+{% highlight bash %}
 /home/kmamykin/.rvm/gems/ruby-1.9.2-p180@qrious/gems/execjs-1.2.0/lib/execjs/runtimes.rb:46:in `autodetect': Could not find a JavaScript runtime. See https://github.com/sstephenson/execjs for a list of available runtimes. (ExecJS::RuntimeUnavailable)
-        from /home/kmamykin/.rvm/gems/ruby-1.9.2-p180@qrious/gems/execjs-1.2.0/lib/execjs.rb:5:in `<module:ExecJS>'
-        from /home/kmamykin/.rvm/gems/ruby-1.9.2-p180@qrious/gems/execjs-1.2.0/lib/execjs.rb:4:in `<top (required)>'
-        from /home/kmamykin/.rvm/gems/ruby-1.9.2-p180@qrious/gems/coffee-script-2.2.0/lib/coffee_script.rb:1:in `require'
+from /home/kmamykin/.rvm/gems/ruby-1.9.2-p180@qrious/gems/execjs-1.2.0/lib/execjs.rb:5:in `<module:ExecJS>'
+from /home/kmamykin/.rvm/gems/ruby-1.9.2-p180@qrious/gems/execjs-1.2.0/lib/execjs.rb:4:in `<top (required)>'
+from /home/kmamykin/.rvm/gems/ruby-1.9.2-p180@qrious/gems/coffee-script-2.2.0/lib/coffee_script.rb:1:in `require'
+{% endhighlight %}
 
 In this case you need to install one of JavaScript runtimes, for example Node.js with
 
-sudo apt-get install nodejs
+@sudo apt-get install nodejs@
 
 h2. Updating config files
 
-Right now is a good time to generate a new rails 3.1 application and
-compare/diff the generated files under config folder with your
-application. 
+Right now is a good time to generate a new rails 3.1 application and compare/diff the generated files under config folder with your application. 
 
 For my application I had to do the following changes:
 
@@ -79,31 +97,44 @@ Replaced config/boot.rb with the one generated by rails 3.1
 
 In config/application.rb added the following line.
 
+{% highlight ruby %}
 # Enable the asset pipeline
 config.assets.enabled = true
+{% endhighlight %}
 
 In config/environments/development.rb removed the following line:
 
+{% highlight ruby %}
 config.action_view.debug_rjs = true
+{% endhighlight %}
 
 Copy over config/initializers/wrap_parametes.rb
 
 Added the following lines to config/environments/development.rb
 
-  # Do not compress assets
-  config.assets.compress = false
+{% highlight ruby %}
+# Do not compress assets
+config.assets.compress = false
+{% endhighlight %}
+
 Added the following lines to config/encironments/test.rb
 
-  # Configure static asset server for tests with Cache-Control for performance
-  config.serve_static_assets = true
-  config.static_cache_control = "public, max-age=3600"
+{% highlight ruby %}
+# Configure static asset server for tests with Cache-Control for performance
+config.serve_static_assets = true
+config.static_cache_control = "public, max-age=3600"
+{% endhighlight %}
 
 Added the following lines to config/environments/production.rb.
 
-  # Compress JavaScripts and CSS
-  config.assets.compress = true
+{% highlight ruby %}
+# Compress JavaScripts and CSS
+config.assets.compress = true
 # Compress both stylesheets and JavaScripts
 config.assets.js_compressor  = :uglifier
 config.assets.css_compressor = :scss
+{% endhighlight %}
 
+h2. Additional notes
 
+Currently rails 3.1.0.rc4 requires JavaScript runtime installed even on production systems, which is clearly wrong and "will be removed":http://yehudakatz.com/2011/06/14/what-the-hell-is-happening-to-rails/ before final release. For now, for heroku deployments, the fix is available "here":http://stackoverflow.com/questions/6075961/problem-deploying-rails-3-1-project-to-heroku-could-not-find-a-javascript-runtim

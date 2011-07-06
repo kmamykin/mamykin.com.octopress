@@ -4,7 +4,7 @@
  <title>Kliment Mamykin</title>
  <link href="http://mamykin.com/atom.xml" rel="self"/>
  <link href="http://mamykin.com/"/>
- <updated>2011-07-04T04:44:44-04:00</updated>
+ <updated>2011-07-06T02:36:55-04:00</updated>
  <id>http://mamykin.com/</id>
  <author>
    <name>Kliment Mamykin</name>
@@ -13,83 +13,92 @@
 
  
  <entry>
-   <title>How to build Sun JDK 1.6 from source on Windows</title>
+   <title>Upgrading an existing app to Rails 3.1</title>
    <link href="http://mamykin.com/2011/07/03/upgrading-to-rails31-rc4.html"/>
    <updated>2011-07-03T00:00:00-04:00</updated>
    <id>http://mamykincom/2011/07/03/upgrading-to-rails31-rc4</id>
-   <content type="html">&lt;h1&gt;How to build Sun &lt;span class=&quot;caps&quot;&gt;JDK&lt;/span&gt; 1.6 from source on Windows&lt;/h1&gt;
+   <content type="html">&lt;h1&gt;Upgrading an existing app to Rails 3.1&lt;/h1&gt;
 &lt;h2&gt;Overview&lt;/h2&gt;
-&lt;h2&gt;Updating Gemfile&lt;/h2&gt;
-&lt;code&gt;&amp;gt; bundle update rails&lt;br /&gt;
-Bundler could not find find gem activesupport (= 3.1.0.rc3, runtime),which is required by gem multi_json (~&amp;gt; 1.0, runtime).&lt;/code&gt;&lt;code&gt;&amp;gt; bundle install&lt;br /&gt;
-Fetching source index for http://rubygems.org/&lt;br /&gt;
-You have requested:&lt;br /&gt;
-  rails ~&amp;gt; 3.1.0.rc4&lt;/code&gt;&lt;p&gt;The bundle currently has rails locked at 3.0.9.&lt;br /&gt;
-Try running `bundle update rails`&lt;/p&gt;
-&lt;p&gt;The approach I took is to comment out all my gems in Gemfile except&lt;br /&gt;
-those that are dependency of rails 3.1, update rails, and then uncomment&lt;br /&gt;
-gems one by one and deal with errors.&lt;/p&gt;
-&lt;p&gt;For example, in my case linkedin gem was found to cause the problem&lt;br /&gt;
-depending on earlier versions of multi_json, where as rails 3.1 requires as a minimum&lt;br /&gt;
-1.0.2.&lt;/p&gt;
-&lt;p&gt;Another approach is to rename the gemset (you are using rvm, aren&amp;#8217;t&lt;br /&gt;
-you?) to something else for reference and create an empty gemset with&lt;br /&gt;
-the original name. Then try to install the updated Gemfile with bundle&lt;br /&gt;
-install. (Note, you may need to remove Gemfile.lock before this)&lt;/p&gt;
-&lt;p&gt;Running bundle install on a recreated gemset seems to be the cleaner&lt;br /&gt;
-approach, and that is the one I used.&lt;/p&gt;
-&lt;p&gt;Go through the tests output and fix deprecation warnings.&lt;/p&gt;
-&lt;p&gt;You might want to disable asset pipeline to test the app now. Inside&lt;br /&gt;
-config/application.rb put&lt;/p&gt;
+&lt;p&gt;This blog post documents the process of upgrading &lt;a href=&quot;http://qrio.us&quot;&gt;Qrious app&lt;/a&gt; to Rails 3.1.0.rc4. While certain errors may be application/gems specific, I hope the overall approach may be usefull to other application.&lt;/p&gt;
+&lt;p&gt;The process was split into two stages&lt;/p&gt;
 &lt;ol&gt;
-	&lt;li&gt;Disable the asset pipeline for now&lt;br /&gt;
-    config.assets.enabled = false # &amp;lt;== this is temporary, to make&lt;br /&gt;
-things work without the assets pipeline&lt;/li&gt;
+	&lt;li&gt;Upgrading the rails gem, dealing and resolving gem dependencies and&lt;/li&gt;
+	&lt;li&gt;Switching to use the assets pipeline, sass/compass, deploying to heroku and Amazon S3/CloudFront.&lt;/li&gt;
 &lt;/ol&gt;
+&lt;h2&gt;Updating Gemfile&lt;/h2&gt;
+&lt;p&gt;There is more then one way to do it. And, as a helper, generate a new rails 3.1 application and refer to its Gemfile and config files for reference.&lt;/p&gt;
+&lt;p&gt;The initial attempt was to simply include rails 3.1 gems in Gemfile&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;bash&quot;&gt;gem &lt;span class=&quot;s1&quot;&gt;&amp;#39;rails&amp;#39;&lt;/span&gt;, &lt;span class=&quot;s1&quot;&gt;&amp;#39;3.1.0.rc4&amp;#39;&lt;/span&gt;
+gem &lt;span class=&quot;s1&quot;&gt;&amp;#39;sass-rails&amp;#39;&lt;/span&gt;, &lt;span class=&quot;s2&quot;&gt;&amp;quot;~&amp;gt; 3.1.0.rc&amp;quot;&lt;/span&gt;
+gem &lt;span class=&quot;s1&quot;&gt;&amp;#39;coffee-script&amp;#39;&lt;/span&gt;
+gem &lt;span class=&quot;s1&quot;&gt;&amp;#39;uglifier&amp;#39;&lt;/span&gt;
+gem &lt;span class=&quot;s1&quot;&gt;&amp;#39;jquery-rails&amp;#39;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;&lt;p&gt;and update the project with &lt;code&gt;bundler update rails&lt;/code&gt;:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;bundle update rails
+Bundler could not find find gem activesupport &lt;span class=&quot;o&quot;&gt;(=&lt;/span&gt; 3.1.0.rc3, runtime&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;, which is required by gem multi_json &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;~&amp;gt; 1.0, runtime&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;.
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;&lt;p&gt;Boom! Bundler could not resolve dependencies. It seems some other gem depends on multi_json gem with too narrow constraint on the version. (I later discovered it was linkedin gem).&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;bundle install
+Fetching &lt;span class=&quot;nb&quot;&gt;source &lt;/span&gt;index &lt;span class=&quot;k&quot;&gt;for &lt;/span&gt;http://rubygems.org/
+You have requested:
+rails ~&amp;gt; 3.1.0.rc4
+
+The bundle currently has rails locked at 3.0.9.
+Try running &lt;span class=&quot;sb&quot;&gt;`&lt;/span&gt;bundle update rails&lt;span class=&quot;sb&quot;&gt;`&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;&lt;p&gt;Vicious cycle. I could have dug into the previously stable Gemfile.lock trying to manually track down the mismatched dependencies, but that did not seem like a particularly robust approach, especially since this unresolved dependency may not be the last.&lt;/p&gt;
+&lt;p&gt;Anothep approach you may try, is to comment out all gems in Gemfile except rails 3.1, update rails, and then uncomment gems one by one and deal with errors.&lt;/p&gt;
+&lt;p&gt;The approach that finally worked for me was to rename the gemset (you are using rvm, aren&amp;#8217;t you?) to something else for reference and create an empty gemset with the original name. Then try to install the updated Gemfile with bundle install. (Delte Gemfile.lock before this).&lt;/p&gt;
+&lt;p&gt;This is a cleaner approach with a disadvantage that the other gems which had no version constraint specified in Gemfile will be installed with the latest version, and that may not be what you want. To mitigate it, take a look at your pre-3.1 Gemfile.lock and put a version constraint for the gems you dont want upgraded.&lt;/p&gt;
+&lt;p&gt;Once the gems are installed, run the tests and go through the tests output and fix deprecation warnings.&lt;/p&gt;
+&lt;p&gt;You can also run the app with the assets pipeline disabled to make sure nothing is broken with the gems upgrade. Inside config/application.rb put:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;ruby&quot;&gt;&lt;span class=&quot;c1&quot;&gt;# Disable the asset pipeline for now&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;config&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;assets&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;enabled&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;kp&quot;&gt;false&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;# &amp;lt;== this is temporary&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;&lt;p&gt;At theis point your application should be working as before the upgrage, with assets pipeline disabled.&lt;/p&gt;
 &lt;h3&gt;Errors and Solutions&lt;/h3&gt;
-&lt;p&gt;undefined method `debug_rjs=&amp;#8217; for ActionView::Base:Class&lt;/p&gt;
-&lt;p&gt;This option was &lt;a href=&quot;https://github.com/rails/rails/commit/d8f23ca627df85b33fe8db87db5483c10b62bfe6&quot;&gt;removed in rails&lt;/a&gt;&lt;br /&gt;
-You will need to remove a reference to it from config/environments/development.rb&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;bash&quot;&gt;undefined method &lt;span class=&quot;sb&quot;&gt;`&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;debug_rjs&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;&amp;#39;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;for &lt;/span&gt;ActionView::Base:Class
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;&lt;p&gt;This option was &lt;a href=&quot;https://github.com/rails/rails/commit/d8f23ca627df85b33fe8db87db5483c10b62bfe6&quot;&gt;removed in rails&lt;/a&gt; You will need to remove a reference to it from config/environments/development.rb&lt;/p&gt;
 &lt;p&gt;If you are on *nix machine you may get:&lt;/p&gt;
-&lt;p&gt;/home/kmamykin/.rvm/gems/ruby-1.9.2-p180@qrious/gems/execjs-1.2.0/lib/execjs/runtimes.rb:46:in `autodetect&amp;#8217;: Could not find a JavaScript runtime. See https://github.com/sstephenson/execjs for a list of available runtimes. (ExecJS::RuntimeUnavailable)&lt;br /&gt;
-        from /home/kmamykin/.rvm/gems/ruby-1.9.2-p180@qrious/gems/execjs-1.2.0/lib/execjs.rb:5:in `&lt;module:ExecJS&gt;&amp;#8217;&lt;br /&gt;
-        from /home/kmamykin/.rvm/gems/ruby-1.9.2-p180@qrious/gems/execjs-1.2.0/lib/execjs.rb:4:in `&amp;lt;top (required)&amp;gt;&amp;#8217;&lt;br /&gt;
-        from /home/kmamykin/.rvm/gems/ruby-1.9.2-p180@qrious/gems/coffee-script-2.2.0/lib/coffee_script.rb:1:in `require&amp;#8217;&lt;/p&gt;
-&lt;p&gt;In this case you need to install one of JavaScript runtimes, for example Node.js with&lt;/p&gt;
-&lt;p&gt;sudo apt-get install nodejs&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;bash&quot;&gt;/home/kmamykin/.rvm/gems/ruby-1.9.2-p180@qrious/gems/execjs-1.2.0/lib/execjs/runtimes.rb:46:in &lt;span class=&quot;sb&quot;&gt;`&lt;/span&gt;autodetect&lt;span class=&quot;s1&quot;&gt;&amp;#39;: Could not find a JavaScript runtime. See https://github.com/sstephenson/execjs for a list of available runtimes. (ExecJS::RuntimeUnavailable)&lt;/span&gt;
+&lt;span class=&quot;s1&quot;&gt;from /home/kmamykin/.rvm/gems/ruby-1.9.2-p180@qrious/gems/execjs-1.2.0/lib/execjs.rb:5:in `&amp;lt;module:ExecJS&amp;gt;&amp;#39;&lt;/span&gt;
+from /home/kmamykin/.rvm/gems/ruby-1.9.2-p180@qrious/gems/execjs-1.2.0/lib/execjs.rb:4:in &lt;span class=&quot;sb&quot;&gt;`&lt;/span&gt;&amp;lt;top &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;required&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;&amp;gt;&lt;span class=&quot;s1&quot;&gt;&amp;#39;&lt;/span&gt;
+&lt;span class=&quot;s1&quot;&gt;from /home/kmamykin/.rvm/gems/ruby-1.9.2-p180@qrious/gems/coffee-script-2.2.0/lib/coffee_script.rb:1:in `require&amp;#39;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;&lt;p&gt;In this case you need to install one of JavaScript runtimes, for example Node.js with&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;sudo apt-get install nodejs&lt;/code&gt;&lt;/p&gt;
 &lt;h2&gt;Updating config files&lt;/h2&gt;
-&lt;p&gt;Right now is a good time to generate a new rails 3.1 application and&lt;br /&gt;
-compare/diff the generated files under config folder with your&lt;br /&gt;
-application.&lt;/p&gt;
+&lt;p&gt;Right now is a good time to generate a new rails 3.1 application and compare/diff the generated files under config folder with your application.&lt;/p&gt;
 &lt;p&gt;For my application I had to do the following changes:&lt;/p&gt;
 &lt;p&gt;Replaced config/boot.rb with the one generated by rails 3.1&lt;/p&gt;
 &lt;p&gt;In config/application.rb added the following line.&lt;/p&gt;
-&lt;ol&gt;
-	&lt;li&gt;Enable the asset pipeline&lt;br /&gt;
-config.assets.enabled = true&lt;/li&gt;
-&lt;/ol&gt;
-&lt;p&gt;In config/environments/development.rb removed the following line:&lt;/p&gt;
-&lt;p&gt;config.action_view.debug_rjs = true&lt;/p&gt;
-&lt;p&gt;Copy over config/initializers/wrap_parametes.rb&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;ruby&quot;&gt;&lt;span class=&quot;c1&quot;&gt;# Enable the asset pipeline&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;config&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;assets&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;enabled&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;kp&quot;&gt;true&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;&lt;p&gt;In config/environments/development.rb removed the following line:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;ruby&quot;&gt;&lt;span class=&quot;n&quot;&gt;config&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;action_view&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;debug_rjs&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;kp&quot;&gt;true&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;&lt;p&gt;Copy over config/initializers/wrap_parametes.rb&lt;/p&gt;
 &lt;p&gt;Added the following lines to config/environments/development.rb&lt;/p&gt;
-&lt;ol&gt;
-	&lt;li&gt;Do not compress assets&lt;br /&gt;
-  config.assets.compress = false&lt;br /&gt;
-Added the following lines to config/encironments/test.rb&lt;/li&gt;
-&lt;/ol&gt;
-&lt;ol&gt;
-	&lt;li&gt;Configure static asset server for tests with Cache-Control for performance&lt;br /&gt;
-  config.serve_static_assets = true&lt;br /&gt;
-  config.static_cache_control = &amp;#8220;public, max-age=3600&amp;#8221;&lt;/li&gt;
-&lt;/ol&gt;
-&lt;p&gt;Added the following lines to config/environments/production.rb.&lt;/p&gt;
-&lt;ol&gt;
-	&lt;li&gt;Compress JavaScripts and &lt;span class=&quot;caps&quot;&gt;CSS&lt;/span&gt;&lt;br /&gt;
-  config.assets.compress = true&lt;/li&gt;
-	&lt;li&gt;Compress both stylesheets and JavaScripts&lt;br /&gt;
-config.assets.js_compressor  = :uglifier&lt;br /&gt;
-config.assets.css_compressor = :scss&lt;/li&gt;
-&lt;/ol&gt;</content>
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;ruby&quot;&gt;&lt;span class=&quot;c1&quot;&gt;# Do not compress assets&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;config&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;assets&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;compress&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;kp&quot;&gt;false&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;&lt;p&gt;Added the following lines to config/encironments/test.rb&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;ruby&quot;&gt;&lt;span class=&quot;c1&quot;&gt;# Configure static asset server for tests with Cache-Control for performance&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;config&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;serve_static_assets&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;kp&quot;&gt;true&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;config&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;static_cache_control&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;public, max-age=3600&amp;quot;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;&lt;p&gt;Added the following lines to config/environments/production.rb.&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;ruby&quot;&gt;&lt;span class=&quot;c1&quot;&gt;# Compress JavaScripts and CSS&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;config&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;assets&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;compress&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;kp&quot;&gt;true&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;# Compress both stylesheets and JavaScripts&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;config&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;assets&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;js_compressor&lt;/span&gt;  &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;:uglifier&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;config&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;assets&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;css_compressor&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;:scss&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;&lt;h2&gt;Additional notes&lt;/h2&gt;
+&lt;p&gt;Currently rails 3.1.0.rc4 requires JavaScript runtime installed even on production systems, which is clearly wrong and &lt;a href=&quot;http://yehudakatz.com/2011/06/14/what-the-hell-is-happening-to-rails/&quot;&gt;will be removed&lt;/a&gt; before final release. For now, for heroku deployments, the fix is available &lt;a href=&quot;http://stackoverflow.com/questions/6075961/problem-deploying-rails-3-1-project-to-heroku-could-not-find-a-javascript-runtim&quot;&gt;here&lt;/a&gt;&lt;/p&gt;</content>
  </entry>
  
  <entry>

@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en-us">
 <head>
    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
-   <title>How to build Sun JDK 1.6 from source on Windows</title>
+   <title>Upgrading an existing app to Rails 3.1</title>
    <meta name="author" content="Kliment Mamykin" />
 
    <!-- syntax highlighting CSS -->
@@ -24,79 +24,88 @@
   </div>
   
   <div id="post">
-<h1>How to build Sun <span class="caps">JDK</span> 1.6 from source on Windows</h1>
+<h1>Upgrading an existing app to Rails 3.1</h1>
 <h2>Overview</h2>
-<h2>Updating Gemfile</h2>
-<code>&gt; bundle update rails<br />
-Bundler could not find find gem activesupport (= 3.1.0.rc3, runtime),which is required by gem multi_json (~&gt; 1.0, runtime).</code><code>&gt; bundle install<br />
-Fetching source index for http://rubygems.org/<br />
-You have requested:<br />
-  rails ~&gt; 3.1.0.rc4</code><p>The bundle currently has rails locked at 3.0.9.<br />
-Try running `bundle update rails`</p>
-<p>The approach I took is to comment out all my gems in Gemfile except<br />
-those that are dependency of rails 3.1, update rails, and then uncomment<br />
-gems one by one and deal with errors.</p>
-<p>For example, in my case linkedin gem was found to cause the problem<br />
-depending on earlier versions of multi_json, where as rails 3.1 requires as a minimum<br />
-1.0.2.</p>
-<p>Another approach is to rename the gemset (you are using rvm, aren&#8217;t<br />
-you?) to something else for reference and create an empty gemset with<br />
-the original name. Then try to install the updated Gemfile with bundle<br />
-install. (Note, you may need to remove Gemfile.lock before this)</p>
-<p>Running bundle install on a recreated gemset seems to be the cleaner<br />
-approach, and that is the one I used.</p>
-<p>Go through the tests output and fix deprecation warnings.</p>
-<p>You might want to disable asset pipeline to test the app now. Inside<br />
-config/application.rb put</p>
+<p>This blog post documents the process of upgrading <a href="http://qrio.us">Qrious app</a> to Rails 3.1.0.rc4. While certain errors may be application/gems specific, I hope the overall approach may be usefull to other application.</p>
+<p>The process was split into two stages</p>
 <ol>
-	<li>Disable the asset pipeline for now<br />
-    config.assets.enabled = false # &lt;== this is temporary, to make<br />
-things work without the assets pipeline</li>
+	<li>Upgrading the rails gem, dealing and resolving gem dependencies and</li>
+	<li>Switching to use the assets pipeline, sass/compass, deploying to heroku and Amazon S3/CloudFront.</li>
 </ol>
+<h2>Updating Gemfile</h2>
+<p>There is more then one way to do it. And, as a helper, generate a new rails 3.1 application and refer to its Gemfile and config files for reference.</p>
+<p>The initial attempt was to simply include rails 3.1 gems in Gemfile</p>
+<div class="highlight"><pre><code class="bash">gem <span class="s1">&#39;rails&#39;</span>, <span class="s1">&#39;3.1.0.rc4&#39;</span>
+gem <span class="s1">&#39;sass-rails&#39;</span>, <span class="s2">&quot;~&gt; 3.1.0.rc&quot;</span>
+gem <span class="s1">&#39;coffee-script&#39;</span>
+gem <span class="s1">&#39;uglifier&#39;</span>
+gem <span class="s1">&#39;jquery-rails&#39;</span>
+</code></pre>
+</div><p>and update the project with <code>bundler update rails</code>:</p>
+<div class="highlight"><pre><code class="bash"><span class="nv">$ </span>bundle update rails
+Bundler could not find find gem activesupport <span class="o">(=</span> 3.1.0.rc3, runtime<span class="o">)</span>, which is required by gem multi_json <span class="o">(</span>~&gt; 1.0, runtime<span class="o">)</span>.
+</code></pre>
+</div><p>Boom! Bundler could not resolve dependencies. It seems some other gem depends on multi_json gem with too narrow constraint on the version. (I later discovered it was linkedin gem).</p>
+<div class="highlight"><pre><code class="bash"><span class="nv">$ </span>bundle install
+Fetching <span class="nb">source </span>index <span class="k">for </span>http://rubygems.org/
+You have requested:
+rails ~&gt; 3.1.0.rc4
+
+The bundle currently has rails locked at 3.0.9.
+Try running <span class="sb">`</span>bundle update rails<span class="sb">`</span>
+</code></pre>
+</div><p>Vicious cycle. I could have dug into the previously stable Gemfile.lock trying to manually track down the mismatched dependencies, but that did not seem like a particularly robust approach, especially since this unresolved dependency may not be the last.</p>
+<p>Anothep approach you may try, is to comment out all gems in Gemfile except rails 3.1, update rails, and then uncomment gems one by one and deal with errors.</p>
+<p>The approach that finally worked for me was to rename the gemset (you are using rvm, aren&#8217;t you?) to something else for reference and create an empty gemset with the original name. Then try to install the updated Gemfile with bundle install. (Delte Gemfile.lock before this).</p>
+<p>This is a cleaner approach with a disadvantage that the other gems which had no version constraint specified in Gemfile will be installed with the latest version, and that may not be what you want. To mitigate it, take a look at your pre-3.1 Gemfile.lock and put a version constraint for the gems you dont want upgraded.</p>
+<p>Once the gems are installed, run the tests and go through the tests output and fix deprecation warnings.</p>
+<p>You can also run the app with the assets pipeline disabled to make sure nothing is broken with the gems upgrade. Inside config/application.rb put:</p>
+<div class="highlight"><pre><code class="ruby"><span class="c1"># Disable the asset pipeline for now</span>
+<span class="n">config</span><span class="o">.</span><span class="n">assets</span><span class="o">.</span><span class="n">enabled</span> <span class="o">=</span> <span class="kp">false</span> <span class="c1"># &lt;== this is temporary</span>
+</code></pre>
+</div><p>At theis point your application should be working as before the upgrage, with assets pipeline disabled.</p>
 <h3>Errors and Solutions</h3>
-<p>undefined method `debug_rjs=&#8217; for ActionView::Base:Class</p>
-<p>This option was <a href="https://github.com/rails/rails/commit/d8f23ca627df85b33fe8db87db5483c10b62bfe6">removed in rails</a><br />
-You will need to remove a reference to it from config/environments/development.rb</p>
+<div class="highlight"><pre><code class="bash">undefined method <span class="sb">`</span><span class="nv">debug_rjs</span><span class="o">=</span><span class="err">&#39;</span> <span class="k">for </span>ActionView::Base:Class
+</code></pre>
+</div><p>This option was <a href="https://github.com/rails/rails/commit/d8f23ca627df85b33fe8db87db5483c10b62bfe6">removed in rails</a> You will need to remove a reference to it from config/environments/development.rb</p>
 <p>If you are on *nix machine you may get:</p>
-<p>/home/kmamykin/.rvm/gems/ruby-1.9.2-p180@qrious/gems/execjs-1.2.0/lib/execjs/runtimes.rb:46:in `autodetect&#8217;: Could not find a JavaScript runtime. See https://github.com/sstephenson/execjs for a list of available runtimes. (ExecJS::RuntimeUnavailable)<br />
-        from /home/kmamykin/.rvm/gems/ruby-1.9.2-p180@qrious/gems/execjs-1.2.0/lib/execjs.rb:5:in `<module:ExecJS>&#8217;<br />
-        from /home/kmamykin/.rvm/gems/ruby-1.9.2-p180@qrious/gems/execjs-1.2.0/lib/execjs.rb:4:in `&lt;top (required)&gt;&#8217;<br />
-        from /home/kmamykin/.rvm/gems/ruby-1.9.2-p180@qrious/gems/coffee-script-2.2.0/lib/coffee_script.rb:1:in `require&#8217;</p>
-<p>In this case you need to install one of JavaScript runtimes, for example Node.js with</p>
-<p>sudo apt-get install nodejs</p>
+<div class="highlight"><pre><code class="bash">/home/kmamykin/.rvm/gems/ruby-1.9.2-p180@qrious/gems/execjs-1.2.0/lib/execjs/runtimes.rb:46:in <span class="sb">`</span>autodetect<span class="s1">&#39;: Could not find a JavaScript runtime. See https://github.com/sstephenson/execjs for a list of available runtimes. (ExecJS::RuntimeUnavailable)</span>
+<span class="s1">from /home/kmamykin/.rvm/gems/ruby-1.9.2-p180@qrious/gems/execjs-1.2.0/lib/execjs.rb:5:in `&lt;module:ExecJS&gt;&#39;</span>
+from /home/kmamykin/.rvm/gems/ruby-1.9.2-p180@qrious/gems/execjs-1.2.0/lib/execjs.rb:4:in <span class="sb">`</span>&lt;top <span class="o">(</span>required<span class="o">)</span>&gt;<span class="s1">&#39;</span>
+<span class="s1">from /home/kmamykin/.rvm/gems/ruby-1.9.2-p180@qrious/gems/coffee-script-2.2.0/lib/coffee_script.rb:1:in `require&#39;</span>
+</code></pre>
+</div><p>In this case you need to install one of JavaScript runtimes, for example Node.js with</p>
+<p><code>sudo apt-get install nodejs</code></p>
 <h2>Updating config files</h2>
-<p>Right now is a good time to generate a new rails 3.1 application and<br />
-compare/diff the generated files under config folder with your<br />
-application.</p>
+<p>Right now is a good time to generate a new rails 3.1 application and compare/diff the generated files under config folder with your application.</p>
 <p>For my application I had to do the following changes:</p>
 <p>Replaced config/boot.rb with the one generated by rails 3.1</p>
 <p>In config/application.rb added the following line.</p>
-<ol>
-	<li>Enable the asset pipeline<br />
-config.assets.enabled = true</li>
-</ol>
-<p>In config/environments/development.rb removed the following line:</p>
-<p>config.action_view.debug_rjs = true</p>
-<p>Copy over config/initializers/wrap_parametes.rb</p>
+<div class="highlight"><pre><code class="ruby"><span class="c1"># Enable the asset pipeline</span>
+<span class="n">config</span><span class="o">.</span><span class="n">assets</span><span class="o">.</span><span class="n">enabled</span> <span class="o">=</span> <span class="kp">true</span>
+</code></pre>
+</div><p>In config/environments/development.rb removed the following line:</p>
+<div class="highlight"><pre><code class="ruby"><span class="n">config</span><span class="o">.</span><span class="n">action_view</span><span class="o">.</span><span class="n">debug_rjs</span> <span class="o">=</span> <span class="kp">true</span>
+</code></pre>
+</div><p>Copy over config/initializers/wrap_parametes.rb</p>
 <p>Added the following lines to config/environments/development.rb</p>
-<ol>
-	<li>Do not compress assets<br />
-  config.assets.compress = false<br />
-Added the following lines to config/encironments/test.rb</li>
-</ol>
-<ol>
-	<li>Configure static asset server for tests with Cache-Control for performance<br />
-  config.serve_static_assets = true<br />
-  config.static_cache_control = &#8220;public, max-age=3600&#8221;</li>
-</ol>
-<p>Added the following lines to config/environments/production.rb.</p>
-<ol>
-	<li>Compress JavaScripts and <span class="caps">CSS</span><br />
-  config.assets.compress = true</li>
-	<li>Compress both stylesheets and JavaScripts<br />
-config.assets.js_compressor  = :uglifier<br />
-config.assets.css_compressor = :scss</li>
-</ol>
+<div class="highlight"><pre><code class="ruby"><span class="c1"># Do not compress assets</span>
+<span class="n">config</span><span class="o">.</span><span class="n">assets</span><span class="o">.</span><span class="n">compress</span> <span class="o">=</span> <span class="kp">false</span>
+</code></pre>
+</div><p>Added the following lines to config/encironments/test.rb</p>
+<div class="highlight"><pre><code class="ruby"><span class="c1"># Configure static asset server for tests with Cache-Control for performance</span>
+<span class="n">config</span><span class="o">.</span><span class="n">serve_static_assets</span> <span class="o">=</span> <span class="kp">true</span>
+<span class="n">config</span><span class="o">.</span><span class="n">static_cache_control</span> <span class="o">=</span> <span class="s2">&quot;public, max-age=3600&quot;</span>
+</code></pre>
+</div><p>Added the following lines to config/environments/production.rb.</p>
+<div class="highlight"><pre><code class="ruby"><span class="c1"># Compress JavaScripts and CSS</span>
+<span class="n">config</span><span class="o">.</span><span class="n">assets</span><span class="o">.</span><span class="n">compress</span> <span class="o">=</span> <span class="kp">true</span>
+<span class="c1"># Compress both stylesheets and JavaScripts</span>
+<span class="n">config</span><span class="o">.</span><span class="n">assets</span><span class="o">.</span><span class="n">js_compressor</span>  <span class="o">=</span> <span class="ss">:uglifier</span>
+<span class="n">config</span><span class="o">.</span><span class="n">assets</span><span class="o">.</span><span class="n">css_compressor</span> <span class="o">=</span> <span class="ss">:scss</span>
+</code></pre>
+</div><h2>Additional notes</h2>
+<p>Currently rails 3.1.0.rc4 requires JavaScript runtime installed even on production systems, which is clearly wrong and <a href="http://yehudakatz.com/2011/06/14/what-the-hell-is-happening-to-rails/">will be removed</a> before final release. For now, for heroku deployments, the fix is available <a href="http://stackoverflow.com/questions/6075961/problem-deploying-rails-3-1-project-to-heroku-could-not-find-a-javascript-runtim">here</a></p>
 </div>
 
 <div id="related">
