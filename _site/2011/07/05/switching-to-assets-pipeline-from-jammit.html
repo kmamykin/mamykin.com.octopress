@@ -26,7 +26,7 @@
   <div id="post">
 <h1>Migrating from Jammit to Asset Pipeline in Rails 3.1</h1>
 <h2>Overview</h2>
-<p>In my <a href="/2011/07/03/upgrading-to-rails31-rc4.html">previous post</a> I described the steps necessary to upgrade an existing application to Rails 3.1, but the post did not go into details about how to migrate an existing collection of assets (in my case packaged using Jammit/Jammit-S2 gems) to Sprokets based asset pipeline. Here we dive into the nitty gritty of the migration.</p>
+<p>In my <a href="/2011/07/03/upgrading-to-rails31-rc4.html">previous post</a> I described the steps necessary to upgrade an existing application to Rails 3.1, but the post did not go into details about how to migrate an existing collection of assets (in my case packaged using Jammit/Jammit-S2 gems) to Sprockets based asset pipeline. Here we dive into the nitty gritty of the migration.</p>
 <p>My motivations for migrating to the Rails built-in asset pipeline:</p>
 <ol>
 	<li>Support from a larger community</li>
@@ -63,7 +63,7 @@ You can modify the values of the config hash inside your config/application.rb o
 	<li>config.assets.precompile &#8211; an array of filename patterns that will be precompiled when running <code>rake assets:precompile</code>. If you have more then one package of js or css (e.g. application.css and mobile.css), you should <code>config.assets.precompile += %w( mobile.css )</code> in your config/application.rb</li>
 	<li>config.prefix &#8211; the path Sprockets asset pipeline will mount on to serve compiled assets. Please note that as of Rails 3.1.0.rc4 there is a bug where <a href="https://github.com/rails/rails/issues/1489">helpers dont respect config.assets.prefix</a></li>
 </ul>
-<h2>Making Sprokets Asset Pipeline work in parallel with Jammit</h2>
+<h2>Making Sprockets Asset Pipeline work in parallel with Jammit</h2>
 <ol>
 	<li>Remove Jammit pregenerated asset files: <code>rm -rf public/assets</code>. If there are pregenerated files in /assets rails will serve those without processing your app/assets folder.</li>
 	<li>Make Jammit mount on some other path by adding <code>package_path: jammit</code> to config/assets.yml</li>
@@ -85,6 +85,13 @@ You can modify the values of the config hash inside your config/application.rb o
 	<li>Remove bundling of jquery.js, jquery-ui.js and rails.js (replaced by jquery_ujs.js) from config/assets.yml. If you did not bundle jquery with Jammit and used a <span class="caps">CDN</span> to serve it, remove it from your layout markup.</li>
 </ol>
 <h2>Adding compass and compass extensions</h2>
+<ol>
+	<li>You need to use compass gem from github for now<br />
+<div class="highlight"><pre><code class="javascript"><span class="nx">gem</span> <span class="s1">&#39;compass&#39;</span><span class="p">,</span> <span class="o">:</span><span class="nx">git</span> <span class="o">=&gt;</span> <span class="s1">&#39;https://github.com/chriseppstein/compass.git&#39;</span><span class="p">,</span> <span class="o">:</span><span class="nx">branch</span> <span class="o">=&gt;</span> <span class="s1">&#39;rails31&#39;</span>
+</code></pre>
+</div></li>
+	<li>To test, add <code>@import "blueprint/reset";</code> into app/assets/stylesheets/application.css.scss, restart the server and inspect the content of /assets/application.css</li>
+</ol>
 <h2>Migrating the rest of the assets</h2>
 <h3>New helpers</h3>
 <p>From sass-rails gem:</p>
@@ -99,7 +106,12 @@ You can modify the values of the config hash inside your config/application.rb o
     For example: `image</em>url(&#8220;rails.png&#8221;)` becomes `url(/assets/rails.png)` and<br />
     `image</em>path(&#8220;rails.png&#8221;)` becomes `&#8220;/assets/rails.png&#8221;`.</li>
 </ul>
-<h2>Deploying to Heroku, S3, CloudFront</h2>
+<p>You have to use <span class="caps">ERB</span> to link to asset pipelined resource.</p>
+<div class="highlight"><pre><code class="css"><span class="nt">body</span> <span class="p">{</span>
+  <span class="k">background</span><span class="o">:</span> <span class="sx">url(&lt;%= asset_path &quot;sunshine-rainbows-and-lollipops.png&quot; %&gt;)</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre>
+</div><h2>Deploying to Heroku, S3, CloudFront</h2>
 <h2>Final cleanup</h2>
 <h2>References</h2>
 <p><a href="http://blog.nodeta.com/2011/06/14/rails-3-1-asset-pipeline-in-the-real-world/">Rails 3.1 Asset Pipeline in the Real World</a><br />

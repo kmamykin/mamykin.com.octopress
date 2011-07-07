@@ -4,7 +4,7 @@
  <title>Kliment Mamykin</title>
  <link href="http://mamykin.com/atom.xml" rel="self"/>
  <link href="http://mamykin.com/"/>
- <updated>2011-07-07T04:32:13-04:00</updated>
+ <updated>2011-07-07T05:11:04-04:00</updated>
  <id>http://mamykin.com/</id>
  <author>
    <name>Kliment Mamykin</name>
@@ -19,7 +19,7 @@
    <id>http://mamykincom/2011/07/05/switching-to-assets-pipeline-from-jammit</id>
    <content type="html">&lt;h1&gt;Migrating from Jammit to Asset Pipeline in Rails 3.1&lt;/h1&gt;
 &lt;h2&gt;Overview&lt;/h2&gt;
-&lt;p&gt;In my &lt;a href=&quot;/2011/07/03/upgrading-to-rails31-rc4.html&quot;&gt;previous post&lt;/a&gt; I described the steps necessary to upgrade an existing application to Rails 3.1, but the post did not go into details about how to migrate an existing collection of assets (in my case packaged using Jammit/Jammit-S2 gems) to Sprokets based asset pipeline. Here we dive into the nitty gritty of the migration.&lt;/p&gt;
+&lt;p&gt;In my &lt;a href=&quot;/2011/07/03/upgrading-to-rails31-rc4.html&quot;&gt;previous post&lt;/a&gt; I described the steps necessary to upgrade an existing application to Rails 3.1, but the post did not go into details about how to migrate an existing collection of assets (in my case packaged using Jammit/Jammit-S2 gems) to Sprockets based asset pipeline. Here we dive into the nitty gritty of the migration.&lt;/p&gt;
 &lt;p&gt;My motivations for migrating to the Rails built-in asset pipeline:&lt;/p&gt;
 &lt;ol&gt;
 	&lt;li&gt;Support from a larger community&lt;/li&gt;
@@ -56,7 +56,7 @@ You can modify the values of the config hash inside your config/application.rb o
 	&lt;li&gt;config.assets.precompile &amp;#8211; an array of filename patterns that will be precompiled when running &lt;code&gt;rake assets:precompile&lt;/code&gt;. If you have more then one package of js or css (e.g. application.css and mobile.css), you should &lt;code&gt;config.assets.precompile += %w( mobile.css )&lt;/code&gt; in your config/application.rb&lt;/li&gt;
 	&lt;li&gt;config.prefix &amp;#8211; the path Sprockets asset pipeline will mount on to serve compiled assets. Please note that as of Rails 3.1.0.rc4 there is a bug where &lt;a href=&quot;https://github.com/rails/rails/issues/1489&quot;&gt;helpers dont respect config.assets.prefix&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
-&lt;h2&gt;Making Sprokets Asset Pipeline work in parallel with Jammit&lt;/h2&gt;
+&lt;h2&gt;Making Sprockets Asset Pipeline work in parallel with Jammit&lt;/h2&gt;
 &lt;ol&gt;
 	&lt;li&gt;Remove Jammit pregenerated asset files: &lt;code&gt;rm -rf public/assets&lt;/code&gt;. If there are pregenerated files in /assets rails will serve those without processing your app/assets folder.&lt;/li&gt;
 	&lt;li&gt;Make Jammit mount on some other path by adding &lt;code&gt;package_path: jammit&lt;/code&gt; to config/assets.yml&lt;/li&gt;
@@ -78,6 +78,13 @@ You can modify the values of the config hash inside your config/application.rb o
 	&lt;li&gt;Remove bundling of jquery.js, jquery-ui.js and rails.js (replaced by jquery_ujs.js) from config/assets.yml. If you did not bundle jquery with Jammit and used a &lt;span class=&quot;caps&quot;&gt;CDN&lt;/span&gt; to serve it, remove it from your layout markup.&lt;/li&gt;
 &lt;/ol&gt;
 &lt;h2&gt;Adding compass and compass extensions&lt;/h2&gt;
+&lt;ol&gt;
+	&lt;li&gt;You need to use compass gem from github for now&lt;br /&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;javascript&quot;&gt;&lt;span class=&quot;nx&quot;&gt;gem&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&amp;#39;compass&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;git&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&amp;#39;https://github.com/chriseppstein/compass.git&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;branch&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&amp;#39;rails31&amp;#39;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;&lt;/li&gt;
+	&lt;li&gt;To test, add &lt;code&gt;@import &quot;blueprint/reset&quot;;&lt;/code&gt; into app/assets/stylesheets/application.css.scss, restart the server and inspect the content of /assets/application.css&lt;/li&gt;
+&lt;/ol&gt;
 &lt;h2&gt;Migrating the rest of the assets&lt;/h2&gt;
 &lt;h3&gt;New helpers&lt;/h3&gt;
 &lt;p&gt;From sass-rails gem:&lt;/p&gt;
@@ -92,7 +99,12 @@ You can modify the values of the config hash inside your config/application.rb o
     For example: `image&lt;/em&gt;url(&amp;#8220;rails.png&amp;#8221;)` becomes `url(/assets/rails.png)` and&lt;br /&gt;
     `image&lt;/em&gt;path(&amp;#8220;rails.png&amp;#8221;)` becomes `&amp;#8220;/assets/rails.png&amp;#8221;`.&lt;/li&gt;
 &lt;/ul&gt;
-&lt;h2&gt;Deploying to Heroku, S3, CloudFront&lt;/h2&gt;
+&lt;p&gt;You have to use &lt;span class=&quot;caps&quot;&gt;ERB&lt;/span&gt; to link to asset pipelined resource.&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;css&quot;&gt;&lt;span class=&quot;nt&quot;&gt;body&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;background&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;sx&quot;&gt;url(&amp;lt;%= asset_path &amp;quot;sunshine-rainbows-and-lollipops.png&amp;quot; %&amp;gt;)&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;&lt;h2&gt;Deploying to Heroku, S3, CloudFront&lt;/h2&gt;
 &lt;h2&gt;Final cleanup&lt;/h2&gt;
 &lt;h2&gt;References&lt;/h2&gt;
 &lt;p&gt;&lt;a href=&quot;http://blog.nodeta.com/2011/06/14/rails-3-1-asset-pipeline-in-the-real-world/&quot;&gt;Rails 3.1 Asset Pipeline in the Real World&lt;/a&gt;&lt;br /&gt;

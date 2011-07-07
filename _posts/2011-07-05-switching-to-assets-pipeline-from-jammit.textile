@@ -7,7 +7,7 @@ h1. {{ page.title }}
 
 h2. Overview
 
-In my "previous post":/2011/07/03/upgrading-to-rails31-rc4.html I described the steps necessary to upgrade an existing application to Rails 3.1, but the post did not go into details about how to migrate an existing collection of assets (in my case packaged using Jammit/Jammit-S2 gems) to Sprokets based asset pipeline. Here we dive into the nitty gritty of the migration.
+In my "previous post":/2011/07/03/upgrading-to-rails31-rc4.html I described the steps necessary to upgrade an existing application to Rails 3.1, but the post did not go into details about how to migrate an existing collection of assets (in my case packaged using Jammit/Jammit-S2 gems) to Sprockets based asset pipeline. Here we dive into the nitty gritty of the migration.
 
 My motivations for migrating to the Rails built-in asset pipeline:
 # Support from a larger community
@@ -50,7 +50,7 @@ The usage of app.config.assets is defined here: "$GEM_HOME/gems/actionpack-3.1.0
 * config.assets.precompile - an array of filename patterns that will be precompiled when running @rake assets:precompile@. If you have more then one package of js or css (e.g. application.css and mobile.css), you should @config.assets.precompile += %w( mobile.css )@ in your config/application.rb
 * config.prefix - the path Sprockets asset pipeline will mount on to serve compiled assets. Please note that as of Rails 3.1.0.rc4 there is a bug where "helpers dont respect config.assets.prefix":https://github.com/rails/rails/issues/1489
 
-h2. Making Sprokets Asset Pipeline work in parallel with Jammit
+h2. Making Sprockets Asset Pipeline work in parallel with Jammit
 
 # Remove Jammit pregenerated asset files: @rm -rf public/assets@. If there are pregenerated files in /assets rails will serve those without processing your app/assets folder.
 # Make Jammit mount on some other path by adding @package_path: jammit@ to config/assets.yml
@@ -74,6 +74,12 @@ Here we make asset pipeline serve jquery, jquery_ujs and jquery-ui javascript fi
 
 h2. Adding compass and compass extensions
 
+# You need to use compass gem from github for now
+{% highlight javascript %}
+gem 'compass', :git => 'https://github.com/chriseppstein/compass.git', :branch => 'rails31'
+{% endhighlight %}
+# To test, add @@import "blueprint/reset";@ into app/assets/stylesheets/application.css.scss, restart the server and inspect the content of /assets/application.css
+
 h2. Migrating the rest of the assets
 
 h3. New helpers
@@ -88,6 +94,14 @@ From sass-rails gem:
     image, font, video, audio, javascript, stylesheet.
     For example: `image_url("rails.png")` becomes `url(/assets/rails.png)` and
     `image_path("rails.png")` becomes `"/assets/rails.png"`.
+
+You have to use ERB to link to asset pipelined resource.
+
+{% highlight css %}
+body {
+  background: url(<%= asset_path "sunshine-rainbows-and-lollipops.png" %>);
+}
+{% endhighlight %}
 
 h2. Deploying to Heroku, S3, CloudFront
 
