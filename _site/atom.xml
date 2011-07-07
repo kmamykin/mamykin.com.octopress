@@ -4,13 +4,90 @@
  <title>Kliment Mamykin</title>
  <link href="http://mamykin.com/atom.xml" rel="self"/>
  <link href="http://mamykin.com/"/>
- <updated>2011-07-06T02:36:55-04:00</updated>
+ <updated>2011-07-07T03:49:31-04:00</updated>
  <id>http://mamykin.com/</id>
  <author>
    <name>Kliment Mamykin</name>
    <email>kmamyk@gmail.com</email>
  </author>
 
+ 
+ <entry>
+   <title>Migrating from Jammit to Asset Pipeline in Rails 3.1</title>
+   <link href="http://mamykin.com/2011/07/05/switching-to-assets-pipeline-from-jammit.html"/>
+   <updated>2011-07-05T00:00:00-04:00</updated>
+   <id>http://mamykincom/2011/07/05/switching-to-assets-pipeline-from-jammit</id>
+   <content type="html">&lt;h1&gt;Migrating from Jammit to Asset Pipeline in Rails 3.1&lt;/h1&gt;
+&lt;h2&gt;Overview&lt;/h2&gt;
+&lt;p&gt;In my &lt;a href=&quot;/2011/07/03/upgrading-to-rails31-rc4.html&quot;&gt;previous post&lt;/a&gt; I described the steps necessary to upgrade an existing application to Rails 3.1, but the post did not go into details about how to migrate an existing collection of assets (in my case packaged using Jammit/Jammit-S2 gems) to Sprokets based asset pipeline. Here we dive into the nitty gritty of the migration.&lt;/p&gt;
+&lt;p&gt;My motivations for migrating to the Rails built-in asset pipeline:&lt;/p&gt;
+&lt;ol&gt;
+	&lt;li&gt;Support from a larger community&lt;/li&gt;
+	&lt;li&gt;Ability to use existing js/css libraries packaged as gems&lt;/li&gt;
+	&lt;li&gt;Better asset versioning with MD5 and easier time with CDNs (=faster deployments, less hacks)&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2&gt;Migration approach&lt;/h2&gt;
+&lt;ol&gt;
+	&lt;li&gt;Making sprockets asset pipeline work in parallel with Jammit&lt;/li&gt;
+	&lt;li&gt;Shifting some weight to sprockets (make it serve jquery for example)&lt;/li&gt;
+	&lt;li&gt;Adding compass and compass extensions&lt;/li&gt;
+	&lt;li&gt;Migrating the rest of the assets&lt;/li&gt;
+	&lt;li&gt;Deploying to Heroku, S3, CloudFront&lt;/li&gt;
+	&lt;li&gt;Final cleanup&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2&gt;Asset Pipeline configuration&lt;/h2&gt;
+&lt;p&gt;Rails exposes app.config.assets hash during Rails initialization process. &lt;br /&gt;
+You can modify the values of the config hash inside your config/application.rb or config/environments/xxx.rb.&lt;/p&gt;
+&lt;p&gt;Here is the definition of the assets config hash with the defaults:&lt;br /&gt;
+&lt;a href=&quot;https://github.com/rails/rails/blob/master/railties/lib/rails/application/configuration.rb&quot;&gt;$GEM_HOME/gems/railties-3.1.0.xxx/lib/rails/application/coniguration.rb&lt;/a&gt;&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;ruby&quot;&gt;&lt;span class=&quot;vi&quot;&gt;@assets&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;ActiveSupport&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;OrderedOptions&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;new&lt;/span&gt;
+&lt;span class=&quot;vi&quot;&gt;@assets&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;enabled&lt;/span&gt;    &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;kp&quot;&gt;false&lt;/span&gt;
+&lt;span class=&quot;vi&quot;&gt;@assets&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;paths&lt;/span&gt;      &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;[]&lt;/span&gt;
+&lt;span class=&quot;vi&quot;&gt;@assets&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;precompile&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;sr&quot;&gt; /\w+\.(?!js|css).+/&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;application.js&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;application.css&amp;quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;]&lt;/span&gt;
+&lt;span class=&quot;vi&quot;&gt;@assets&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;prefix&lt;/span&gt;     &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;/assets&amp;quot;&lt;/span&gt;
+
+&lt;span class=&quot;vi&quot;&gt;@assets&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;js_compressor&lt;/span&gt;  &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;kp&quot;&gt;nil&lt;/span&gt;
+&lt;span class=&quot;vi&quot;&gt;@assets&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;css_compressor&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;kp&quot;&gt;nil&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;&lt;p&gt;The usage of app.config.assets is defined here: &lt;a href=&quot;https://github.com/rails/rails/blob/master/actionpack/lib/sprockets/railtie.rb&quot;&gt;$GEM_HOME/gems/actionpack-3.1.0.xxx/lib/sprockets/railtie.rb&lt;/a&gt;&lt;/p&gt;
+&lt;ul&gt;
+	&lt;li&gt;config.assets.enabled &amp;#8211; disables the whole processing of assets. Meaning all you assets should reside and sill be served from Rails.public_path.&lt;/li&gt;
+	&lt;li&gt;config.assets.path &amp;#8211; is an array of paths populated at Rails initialization process with directories where assets are located.&lt;/li&gt;
+	&lt;li&gt;config.assets.precompile &amp;#8211; an array of filename patterns that will be precompiled when running &lt;code&gt;rake assets:precompile&lt;/code&gt;. If you have more then one package of js or css (e.g. application.css and mobile.css), you should &lt;code&gt;config.assets.precompile += %w( mobile.css )&lt;/code&gt; in your config/application.rb&lt;/li&gt;
+	&lt;li&gt;config.prefix &amp;#8211; the path Sprockets asset pipeline will mount on to serve compiled assets. Please note that as of Rails 3.1.0.rc4 there is a bug where &lt;a href=&quot;https://github.com/rails/rails/issues/1489&quot;&gt;helpers dont respect config.assets.prefix&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Making Sprokets Asset Pipeline work in parallel with Jammit&lt;/h2&gt;
+&lt;ol&gt;
+	&lt;li&gt;Remove Jammit pregenerated asset files: &lt;code&gt;rm -rf public/assets&lt;/code&gt;. If there are pregenerated files in /assets rails will serve those without processing your app/assets folder.&lt;/li&gt;
+	&lt;li&gt;Make Jammit mount on some other path by adding &lt;code&gt;package_path: jammit&lt;/code&gt; to config/assets.yml&lt;/li&gt;
+	&lt;li&gt;Enable asset pipeline with &lt;code&gt;config.assets.enabled = true&lt;/code&gt; inside config/application.rb&lt;/li&gt;
+	&lt;li&gt;Copy over app/assets folder from a newly generated rails app to your app. I also renamed application.css to application.css.scss&lt;/li&gt;
+	&lt;li&gt;Add new assets to your layout with &lt;code&gt;= stylesheet_link_tag 'application'&lt;/code&gt; and &lt;code&gt;= javascript_include_tag 'application'&lt;/code&gt;, before corresponding Jammit calls to &lt;code&gt;= include_stylesheets :application&lt;/code&gt; and &lt;code&gt;= include_javascripts :application&lt;/code&gt;&lt;/li&gt;
+	&lt;li&gt;Move images from public/images to app/assets/images. Note that the paths hardcoded in stylesheets may be broken (we will fix it later)&lt;/li&gt;
+	&lt;li&gt;Restart server, most of the site should be functioning. Watch the server console output for the assets it processeing and any broken asset linkss&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2&gt;Shifting some weight to sprockets (make it serve jquery for example)&lt;/h2&gt;
+&lt;h2&gt;Adding compass and compass extensions&lt;/h2&gt;
+&lt;h2&gt;Migrating the rest of the assets&lt;/h2&gt;
+&lt;h3&gt;New helpers&lt;/h3&gt;
+&lt;p&gt;From sass-rails gem:&lt;/p&gt;
+&lt;ul&gt;
+	&lt;li&gt;`asset_path($relative-asset-path, $asset-class)` &amp;#8211; Returns a string to the asset.&lt;br /&gt;
+    For example: `asset_path(&amp;#8220;rails.png&amp;#8221;, image)` becomes `&amp;#8220;/assets/rails.png&amp;#8221;`&lt;/li&gt;
+	&lt;li&gt;`asset_url($relative-asset-path, $asset-class)` &amp;#8211; Returns url reference to the asset.&lt;br /&gt;
+    For example: `asset_url(&amp;#8220;rails.png&amp;#8221;, image)` becomes `url(/assets/rails.png)`&lt;/li&gt;
+	&lt;li&gt;As a convenience, for each of the following asset classes there are&lt;br /&gt;
+    corresponding `&lt;em&gt;path` and `&lt;em&gt;url` helpers:&lt;br /&gt;
+    image, font, video, audio, javascript, stylesheet.&lt;br /&gt;
+    For example: `image&lt;/em&gt;url(&amp;#8220;rails.png&amp;#8221;)` becomes `url(/assets/rails.png)` and&lt;br /&gt;
+    `image&lt;/em&gt;path(&amp;#8220;rails.png&amp;#8221;)` becomes `&amp;#8220;/assets/rails.png&amp;#8221;`.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Deploying to Heroku, S3, CloudFront&lt;/h2&gt;
+&lt;h2&gt;Final cleanup&lt;/h2&gt;
+&lt;h2&gt;References&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&quot;http://blog.nodeta.com/2011/06/14/rails-3-1-asset-pipeline-in-the-real-world/&quot;&gt;Rails 3.1 Asset Pipeline in the Real World&lt;/a&gt;&lt;br /&gt;
+&lt;a href=&quot;https://gist.github.com/1032551&quot;&gt;Trying to get Compass working with the Rails 3.1 asset pipeline&lt;/a&gt;&lt;/p&gt;</content>
+ </entry>
  
  <entry>
    <title>Upgrading an existing app to Rails 3.1</title>
@@ -23,7 +100,7 @@
 &lt;p&gt;The process was split into two stages&lt;/p&gt;
 &lt;ol&gt;
 	&lt;li&gt;Upgrading the rails gem, dealing and resolving gem dependencies and&lt;/li&gt;
-	&lt;li&gt;Switching to use the assets pipeline, sass/compass, deploying to heroku and Amazon S3/CloudFront.&lt;/li&gt;
+	&lt;li&gt;&lt;a href=&quot;/2011/07/05/switching-to-assets-pipeline-from-jammit.html&quot;&gt;Switching to use the assets pipeline, sass/compass, deploying to heroku and Amazon S3/CloudFront&lt;/a&gt;&lt;/li&gt;
 &lt;/ol&gt;
 &lt;h2&gt;Updating Gemfile&lt;/h2&gt;
 &lt;p&gt;There is more then one way to do it. And, as a helper, generate a new rails 3.1 application and refer to its Gemfile and config files for reference.&lt;/p&gt;

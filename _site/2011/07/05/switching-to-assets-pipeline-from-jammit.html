@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en-us">
+<head>
+   <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+   <title>Migrating from Jammit to Asset Pipeline in Rails 3.1</title>
+   <meta name="author" content="Kliment Mamykin" />
+
+   <!-- syntax highlighting CSS -->
+   <link rel="stylesheet" href="/css/syntax.css" type="text/css" />
+
+   <!-- Homepage CSS -->
+   <link rel="stylesheet" href="/css/screen.css" type="text/css" media="screen, projection" />
+
+   <!-- Typekit -->
+   <script type="text/javascript" src="http://use.typekit.com/jpd0pfm.js"></script>
+   <script type="text/javascript">try{Typekit.load();}catch(e){}</script>
+</head>
+<body>
+
+<div class="site">
+  <div class="title">
+    <a href="/">Kliment Mamykin</a>
+    <a class="extra" href="/">home</a>
+  </div>
+  
+  <div id="post">
+<h1>Migrating from Jammit to Asset Pipeline in Rails 3.1</h1>
+<h2>Overview</h2>
+<p>In my <a href="/2011/07/03/upgrading-to-rails31-rc4.html">previous post</a> I described the steps necessary to upgrade an existing application to Rails 3.1, but the post did not go into details about how to migrate an existing collection of assets (in my case packaged using Jammit/Jammit-S2 gems) to Sprokets based asset pipeline. Here we dive into the nitty gritty of the migration.</p>
+<p>My motivations for migrating to the Rails built-in asset pipeline:</p>
+<ol>
+	<li>Support from a larger community</li>
+	<li>Ability to use existing js/css libraries packaged as gems</li>
+	<li>Better asset versioning with MD5 and easier time with CDNs (=faster deployments, less hacks)</li>
+</ol>
+<h2>Migration approach</h2>
+<ol>
+	<li>Making sprockets asset pipeline work in parallel with Jammit</li>
+	<li>Shifting some weight to sprockets (make it serve jquery for example)</li>
+	<li>Adding compass and compass extensions</li>
+	<li>Migrating the rest of the assets</li>
+	<li>Deploying to Heroku, S3, CloudFront</li>
+	<li>Final cleanup</li>
+</ol>
+<h2>Asset Pipeline configuration</h2>
+<p>Rails exposes app.config.assets hash during Rails initialization process. <br />
+You can modify the values of the config hash inside your config/application.rb or config/environments/xxx.rb.</p>
+<p>Here is the definition of the assets config hash with the defaults:<br />
+<a href="https://github.com/rails/rails/blob/master/railties/lib/rails/application/configuration.rb">$GEM_HOME/gems/railties-3.1.0.xxx/lib/rails/application/coniguration.rb</a></p>
+<div class="highlight"><pre><code class="ruby"><span class="vi">@assets</span> <span class="o">=</span> <span class="no">ActiveSupport</span><span class="o">::</span><span class="no">OrderedOptions</span><span class="o">.</span><span class="n">new</span>
+<span class="vi">@assets</span><span class="o">.</span><span class="n">enabled</span>    <span class="o">=</span> <span class="kp">false</span>
+<span class="vi">@assets</span><span class="o">.</span><span class="n">paths</span>      <span class="o">=</span> <span class="o">[]</span>
+<span class="vi">@assets</span><span class="o">.</span><span class="n">precompile</span> <span class="o">=</span> <span class="o">[</span><span class="sr"> /\w+\.(?!js|css).+/</span><span class="p">,</span> <span class="s2">&quot;application.js&quot;</span><span class="p">,</span> <span class="s2">&quot;application.css&quot;</span> <span class="o">]</span>
+<span class="vi">@assets</span><span class="o">.</span><span class="n">prefix</span>     <span class="o">=</span> <span class="s2">&quot;/assets&quot;</span>
+
+<span class="vi">@assets</span><span class="o">.</span><span class="n">js_compressor</span>  <span class="o">=</span> <span class="kp">nil</span>
+<span class="vi">@assets</span><span class="o">.</span><span class="n">css_compressor</span> <span class="o">=</span> <span class="kp">nil</span>
+</code></pre>
+</div><p>The usage of app.config.assets is defined here: <a href="https://github.com/rails/rails/blob/master/actionpack/lib/sprockets/railtie.rb">$GEM_HOME/gems/actionpack-3.1.0.xxx/lib/sprockets/railtie.rb</a></p>
+<ul>
+	<li>config.assets.enabled &#8211; disables the whole processing of assets. Meaning all you assets should reside and sill be served from Rails.public_path.</li>
+	<li>config.assets.path &#8211; is an array of paths populated at Rails initialization process with directories where assets are located.</li>
+	<li>config.assets.precompile &#8211; an array of filename patterns that will be precompiled when running <code>rake assets:precompile</code>. If you have more then one package of js or css (e.g. application.css and mobile.css), you should <code>config.assets.precompile += %w( mobile.css )</code> in your config/application.rb</li>
+	<li>config.prefix &#8211; the path Sprockets asset pipeline will mount on to serve compiled assets. Please note that as of Rails 3.1.0.rc4 there is a bug where <a href="https://github.com/rails/rails/issues/1489">helpers dont respect config.assets.prefix</a></li>
+</ul>
+<h2>Making Sprokets Asset Pipeline work in parallel with Jammit</h2>
+<ol>
+	<li>Remove Jammit pregenerated asset files: <code>rm -rf public/assets</code>. If there are pregenerated files in /assets rails will serve those without processing your app/assets folder.</li>
+	<li>Make Jammit mount on some other path by adding <code>package_path: jammit</code> to config/assets.yml</li>
+	<li>Enable asset pipeline with <code>config.assets.enabled = true</code> inside config/application.rb</li>
+	<li>Copy over app/assets folder from a newly generated rails app to your app. I also renamed application.css to application.css.scss</li>
+	<li>Add new assets to your layout with <code>= stylesheet_link_tag 'application'</code> and <code>= javascript_include_tag 'application'</code>, before corresponding Jammit calls to <code>= include_stylesheets :application</code> and <code>= include_javascripts :application</code></li>
+	<li>Move images from public/images to app/assets/images. Note that the paths hardcoded in stylesheets may be broken (we will fix it later)</li>
+	<li>Restart server, most of the site should be functioning. Watch the server console output for the assets it processeing and any broken asset linkss</li>
+</ol>
+<h2>Shifting some weight to sprockets (make it serve jquery for example)</h2>
+<h2>Adding compass and compass extensions</h2>
+<h2>Migrating the rest of the assets</h2>
+<h3>New helpers</h3>
+<p>From sass-rails gem:</p>
+<ul>
+	<li>`asset_path($relative-asset-path, $asset-class)` &#8211; Returns a string to the asset.<br />
+    For example: `asset_path(&#8220;rails.png&#8221;, image)` becomes `&#8220;/assets/rails.png&#8221;`</li>
+	<li>`asset_url($relative-asset-path, $asset-class)` &#8211; Returns url reference to the asset.<br />
+    For example: `asset_url(&#8220;rails.png&#8221;, image)` becomes `url(/assets/rails.png)`</li>
+	<li>As a convenience, for each of the following asset classes there are<br />
+    corresponding `<em>path` and `<em>url` helpers:<br />
+    image, font, video, audio, javascript, stylesheet.<br />
+    For example: `image</em>url(&#8220;rails.png&#8221;)` becomes `url(/assets/rails.png)` and<br />
+    `image</em>path(&#8220;rails.png&#8221;)` becomes `&#8220;/assets/rails.png&#8221;`.</li>
+</ul>
+<h2>Deploying to Heroku, S3, CloudFront</h2>
+<h2>Final cleanup</h2>
+<h2>References</h2>
+<p><a href="http://blog.nodeta.com/2011/06/14/rails-3-1-asset-pipeline-in-the-real-world/">Rails 3.1 Asset Pipeline in the Real World</a><br />
+<a href="https://gist.github.com/1032551">Trying to get Compass working with the Rails 3.1 asset pipeline</a></p>
+</div>
+
+<div id="related">
+  <h2>Related Posts</h2>
+  <ul class="posts">
+    
+      <li><span>03 Jul 2011</span> &raquo; <a href="/2011/07/03/upgrading-to-rails31-rc4.html">Upgrading an existing app to Rails 3.1</a></li>
+    
+      <li><span>28 Jun 2011</span> &raquo; <a href="/2011/06/28/vim-janus-on-windows.html">How to install vim's Janus plugin distro on Windows</a></li>
+    
+      <li><span>28 Jun 2011</span> &raquo; <a href="/2011/06/28/how-to-render-view-from-rake.html">How to render a Rails 3 view in a rake task</a></li>
+    
+  </ul>
+</div>
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+    var disqus_shortname = 'mamykin'; // required: replace example with your forum shortname
+
+    // The following are highly recommended additional parameters. Remove the slashes in front to use.
+    var disqus_developer = 1; // developer mode is on
+    var disqus_identifier = '/2011/07/05/switching-to-assets-pipeline-from-jammit.html';
+    var disqus_url = 'http://mamykin.com/2011/07/05/switching-to-assets-pipeline-from-jammit.html';
+
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">blog comments powered by <span class="logo-disqus">Disqus</span></a>
+
+  
+  <div class="footer">
+    <div class="contact">
+      <p>
+        Kliment Mamykin<br />
+        Cofounder of <a href="http://qrio.us/">Qrious</a><br />
+        &#107;&#109;&#097;&#109;&#121;&#107;&#064;&#113;&#114;&#105;&#111;&#046;&#117;&#115;
+      </p>
+    </div>
+    <div class="contact">
+      <p>
+        <a href="http://github.com/kmamykin">github.com/kmamykin</a><br />
+        <a href="http://twitter.com/kmamyk">twitter.com/kmamyk</a><br />
+        <a href="http://facebook.com/kmamyk">facebook.com/kmamyk</a><br />
+        <a href="http://linkedin.com/in/kmamyk">linkedin.com/in/kmamyk</a><br />
+        <a href="http://flickr.com/photos/kmamyk/">flickr.com/photos/kmamyk</a>
+      </p>
+    </div>
+    <div class="rss">
+      <a href="http://feeds.feedburner.com/kmamyk">
+        <img src="/images/rss.png" alt="Subscribe to RSS Feed" />
+      </a>
+    </div>
+  </div>
+</div>
+
+<a href="http://github.com/kmamykin/mamykin.com"><img style="position: absolute; top: 0; right: 0; border: 0;" src="http://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png" alt="Fork me on GitHub" /></a>
+
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-20522581-6']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+
+</body>
+</html>

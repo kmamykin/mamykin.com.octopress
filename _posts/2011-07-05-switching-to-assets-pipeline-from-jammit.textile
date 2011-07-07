@@ -1,0 +1,89 @@
+---
+layout: post
+title: Migrating from Jammit to Asset Pipeline in Rails 3.1
+---
+
+h1. {{ page.title }}
+
+h2. Overview
+
+In my "previous post":/2011/07/03/upgrading-to-rails31-rc4.html I described the steps necessary to upgrade an existing application to Rails 3.1, but the post did not go into details about how to migrate an existing collection of assets (in my case packaged using Jammit/Jammit-S2 gems) to Sprokets based asset pipeline. Here we dive into the nitty gritty of the migration.
+
+My motivations for migrating to the Rails built-in asset pipeline:
+# Support from a larger community
+# Ability to use existing js/css libraries packaged as gems
+# Better asset versioning with MD5 and easier time with CDNs (=faster deployments, less hacks)
+
+h2. Migration approach
+
+# Making sprockets asset pipeline work in parallel with Jammit
+# Shifting some weight to sprockets (make it serve jquery for example)
+# Adding compass and compass extensions
+# Migrating the rest of the assets
+# Deploying to Heroku, S3, CloudFront
+# Final cleanup
+
+
+h2. Asset Pipeline configuration
+
+Rails exposes app.config.assets hash during Rails initialization process. 
+You can modify the values of the config hash inside your config/application.rb or config/environments/xxx.rb.
+
+Here is the definition of the assets config hash with the defaults:
+"$GEM_HOME/gems/railties-3.1.0.xxx/lib/rails/application/coniguration.rb":https://github.com/rails/rails/blob/master/railties/lib/rails/application/configuration.rb
+
+{% highlight ruby %}
+@assets = ActiveSupport::OrderedOptions.new
+@assets.enabled    = false
+@assets.paths      = []
+@assets.precompile = [ /\w+\.(?!js|css).+/, "application.js", "application.css" ]
+@assets.prefix     = "/assets"
+
+@assets.js_compressor  = nil
+@assets.css_compressor = nil
+{% endhighlight %}
+
+The usage of app.config.assets is defined here: "$GEM_HOME/gems/actionpack-3.1.0.xxx/lib/sprockets/railtie.rb":https://github.com/rails/rails/blob/master/actionpack/lib/sprockets/railtie.rb
+
+* config.assets.enabled - disables the whole processing of assets. Meaning all you assets should reside and sill be served from Rails.public_path.
+* config.assets.path - is an array of paths populated at Rails initialization process with directories where assets are located. 
+* config.assets.precompile - an array of filename patterns that will be precompiled when running @rake assets:precompile@. If you have more then one package of js or css (e.g. application.css and mobile.css), you should @config.assets.precompile += %w( mobile.css )@ in your config/application.rb
+* config.prefix - the path Sprockets asset pipeline will mount on to serve compiled assets. Please note that as of Rails 3.1.0.rc4 there is a bug where "helpers dont respect config.assets.prefix":https://github.com/rails/rails/issues/1489
+
+h2. Making Sprokets Asset Pipeline work in parallel with Jammit
+
+# Remove Jammit pregenerated asset files: @rm -rf public/assets@. If there are pregenerated files in /assets rails will serve those without processing your app/assets folder.
+# Make Jammit mount on some other path by adding @package_path: jammit@ to config/assets.yml
+# Enable asset pipeline with @config.assets.enabled = true@ inside config/application.rb
+# Copy over app/assets folder from a newly generated rails app to your app. I also renamed application.css to application.css.scss
+# Add new assets to your layout with @= stylesheet_link_tag 'application'@ and @= javascript_include_tag 'application'@, before corresponding Jammit calls to @= include_stylesheets :application@ and @= include_javascripts :application@
+# Move images from public/images to app/assets/images. Note that the paths hardcoded in stylesheets may be broken (we will fix it later)
+# Restart server, most of the site should be functioning. Watch the server console output for the assets it processeing and any broken asset linkss
+
+h2. Shifting some weight to sprockets (make it serve jquery for example)
+
+h2. Adding compass and compass extensions
+
+h2. Migrating the rest of the assets
+
+h3. New helpers
+
+From sass-rails gem:
+  * `asset_path($relative-asset-path, $asset-class)` - Returns a string to the asset.
+    For example: `asset_path("rails.png", image)` becomes `"/assets/rails.png"`
+  * `asset_url($relative-asset-path, $asset-class)` - Returns url reference to the asset.
+    For example: `asset_url("rails.png", image)` becomes `url(/assets/rails.png)`
+  * As a convenience, for each of the following asset classes there are
+    corresponding `_path` and `_url` helpers:
+    image, font, video, audio, javascript, stylesheet.
+    For example: `image_url("rails.png")` becomes `url(/assets/rails.png)` and
+    `image_path("rails.png")` becomes `"/assets/rails.png"`.
+
+h2. Deploying to Heroku, S3, CloudFront
+
+h2. Final cleanup
+
+h2. References
+
+"Rails 3.1 Asset Pipeline in the Real World":http://blog.nodeta.com/2011/06/14/rails-3-1-asset-pipeline-in-the-real-world/
+"Trying to get Compass working with the Rails 3.1 asset pipeline":https://gist.github.com/1032551

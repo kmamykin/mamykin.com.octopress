@@ -12,7 +12,7 @@ This blog post documents the process of upgrading "Qrious app":http://qrio.us to
 The process was split into two stages
 
 # Upgrading the rails gem, dealing and resolving gem dependencies and 
-# Switching to use the assets pipeline, sass/compass, deploying to heroku and Amazon S3/CloudFront.
+# "Switching to use the assets pipeline, sass/compass, deploying to heroku and Amazon S3/CloudFront":/2011/07/05/switching-to-assets-pipeline-from-jammit.html
 
 h2. Updating Gemfile
 
