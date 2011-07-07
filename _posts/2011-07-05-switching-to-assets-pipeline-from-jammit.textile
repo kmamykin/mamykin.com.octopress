@@ -60,7 +60,17 @@ h2. Making Sprokets Asset Pipeline work in parallel with Jammit
 # Move images from public/images to app/assets/images. Note that the paths hardcoded in stylesheets may be broken (we will fix it later)
 # Restart server, most of the site should be functioning. Watch the server console output for the assets it processeing and any broken asset linkss
 
-h2. Shifting some weight to sprockets (make it serve jquery for example)
+h2. Shifting some weight to sprockets
+
+Here we make asset pipeline serve jquery, jquery_ujs and jquery-ui javascript files that are bundled in jquery-rails gem.
+
+# Make sure your app/assets/javascripts/application.js has 
+{% highlight javascript %}
+//= require jquery
+//= require jquery_ujs
+//= require jquery-ui
+{% endhighlight %}
+# Remove bundling of jquery.js, jquery-ui.js and rails.js (replaced by jquery_ujs.js) from config/assets.yml. If you did not bundle jquery with Jammit and used a CDN to serve it, remove it from your layout markup.
 
 h2. Adding compass and compass extensions
 

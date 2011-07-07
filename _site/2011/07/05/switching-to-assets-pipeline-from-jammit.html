@@ -73,7 +73,17 @@ You can modify the values of the config hash inside your config/application.rb o
 	<li>Move images from public/images to app/assets/images. Note that the paths hardcoded in stylesheets may be broken (we will fix it later)</li>
 	<li>Restart server, most of the site should be functioning. Watch the server console output for the assets it processeing and any broken asset linkss</li>
 </ol>
-<h2>Shifting some weight to sprockets (make it serve jquery for example)</h2>
+<h2>Shifting some weight to sprockets</h2>
+<p>Here we make asset pipeline serve jquery, jquery_ujs and jquery-ui javascript files that are bundled in jquery-rails gem.</p>
+<ol>
+	<li>Make sure your app/assets/javascripts/application.js has <br />
+<div class="highlight"><pre><code class="javascript"><span class="c1">//= require jquery</span>
+<span class="c1">//= require jquery_ujs</span>
+<span class="c1">//= require jquery-ui</span>
+</code></pre>
+</div></li>
+	<li>Remove bundling of jquery.js, jquery-ui.js and rails.js (replaced by jquery_ujs.js) from config/assets.yml. If you did not bundle jquery with Jammit and used a <span class="caps">CDN</span> to serve it, remove it from your layout markup.</li>
+</ol>
 <h2>Adding compass and compass extensions</h2>
 <h2>Migrating the rest of the assets</h2>
 <h3>New helpers</h3>

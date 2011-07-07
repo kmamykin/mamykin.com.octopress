@@ -4,7 +4,7 @@
  <title>Kliment Mamykin</title>
  <link href="http://mamykin.com/atom.xml" rel="self"/>
  <link href="http://mamykin.com/"/>
- <updated>2011-07-07T03:49:31-04:00</updated>
+ <updated>2011-07-07T04:32:13-04:00</updated>
  <id>http://mamykin.com/</id>
  <author>
    <name>Kliment Mamykin</name>
@@ -66,7 +66,17 @@ You can modify the values of the config hash inside your config/application.rb o
 	&lt;li&gt;Move images from public/images to app/assets/images. Note that the paths hardcoded in stylesheets may be broken (we will fix it later)&lt;/li&gt;
 	&lt;li&gt;Restart server, most of the site should be functioning. Watch the server console output for the assets it processeing and any broken asset linkss&lt;/li&gt;
 &lt;/ol&gt;
-&lt;h2&gt;Shifting some weight to sprockets (make it serve jquery for example)&lt;/h2&gt;
+&lt;h2&gt;Shifting some weight to sprockets&lt;/h2&gt;
+&lt;p&gt;Here we make asset pipeline serve jquery, jquery_ujs and jquery-ui javascript files that are bundled in jquery-rails gem.&lt;/p&gt;
+&lt;ol&gt;
+	&lt;li&gt;Make sure your app/assets/javascripts/application.js has &lt;br /&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;javascript&quot;&gt;&lt;span class=&quot;c1&quot;&gt;//= require jquery&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;//= require jquery_ujs&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;//= require jquery-ui&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;&lt;/li&gt;
+	&lt;li&gt;Remove bundling of jquery.js, jquery-ui.js and rails.js (replaced by jquery_ujs.js) from config/assets.yml. If you did not bundle jquery with Jammit and used a &lt;span class=&quot;caps&quot;&gt;CDN&lt;/span&gt; to serve it, remove it from your layout markup.&lt;/li&gt;
+&lt;/ol&gt;
 &lt;h2&gt;Adding compass and compass extensions&lt;/h2&gt;
 &lt;h2&gt;Migrating the rest of the assets&lt;/h2&gt;
 &lt;h3&gt;New helpers&lt;/h3&gt;
