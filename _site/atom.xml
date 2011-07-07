@@ -4,7 +4,7 @@
  <title>Kliment Mamykin</title>
  <link href="http://mamykin.com/atom.xml" rel="self"/>
  <link href="http://mamykin.com/"/>
- <updated>2011-07-07T05:11:04-04:00</updated>
+ <updated>2011-07-07T17:15:39-04:00</updated>
  <id>http://mamykin.com/</id>
  <author>
    <name>Kliment Mamykin</name>
@@ -86,8 +86,9 @@ You can modify the values of the config hash inside your config/application.rb o
 	&lt;li&gt;To test, add &lt;code&gt;@import &quot;blueprint/reset&quot;;&lt;/code&gt; into app/assets/stylesheets/application.css.scss, restart the server and inspect the content of /assets/application.css&lt;/li&gt;
 &lt;/ol&gt;
 &lt;h2&gt;Migrating the rest of the assets&lt;/h2&gt;
+&lt;p&gt;There is a lovely &lt;a href=&quot;https://github.com/rails/rails/issues/1209&quot;&gt;discussion&lt;/a&gt; going on the usage of helper functions to link assets (images/audio/fonts etc) inside your css. While some people suggested using &lt;span class=&quot;caps&quot;&gt;ERB&lt;/span&gt; preprocessing and renaming your stylesheets to application.css.scss.erb, there is a better solution. sass-rails gem to the rescue.&lt;/p&gt;
 &lt;h3&gt;New helpers&lt;/h3&gt;
-&lt;p&gt;From sass-rails gem:&lt;/p&gt;
+&lt;p&gt;sass-rails gem defines new helpers to use inside scss templates. From sass-rails gem &lt;span class=&quot;caps&quot;&gt;README&lt;/span&gt;:&lt;/p&gt;
 &lt;ul&gt;
 	&lt;li&gt;`asset_path($relative-asset-path, $asset-class)` &amp;#8211; Returns a string to the asset.&lt;br /&gt;
     For example: `asset_path(&amp;#8220;rails.png&amp;#8221;, image)` becomes `&amp;#8220;/assets/rails.png&amp;#8221;`&lt;/li&gt;
@@ -99,16 +100,24 @@ You can modify the values of the config hash inside your config/application.rb o
     For example: `image&lt;/em&gt;url(&amp;#8220;rails.png&amp;#8221;)` becomes `url(/assets/rails.png)` and&lt;br /&gt;
     `image&lt;/em&gt;path(&amp;#8220;rails.png&amp;#8221;)` becomes `&amp;#8220;/assets/rails.png&amp;#8221;`.&lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;You have to use &lt;span class=&quot;caps&quot;&gt;ERB&lt;/span&gt; to link to asset pipelined resource.&lt;/p&gt;
 &lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;css&quot;&gt;&lt;span class=&quot;nt&quot;&gt;body&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;background&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;sx&quot;&gt;url(&amp;lt;%= asset_path &amp;quot;sunshine-rainbows-and-lollipops.png&amp;quot; %&amp;gt;)&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;some&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;path&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;asset&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;path&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;rails.png&amp;quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;image&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;some&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;url&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;asset&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;sx&quot;&gt;url(&amp;quot;rails.png&amp;quot;, image)&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
 &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;&lt;h2&gt;Deploying to Heroku, S3, CloudFront&lt;/h2&gt;
+&lt;/div&gt;&lt;p&gt;Infortunately at the time of the this post using image-url(&amp;#8220;rails.png&amp;#8221;) returns &amp;#8220;/images/rails/png?1234534&amp;#8221; instead of &amp;#8220;/assets/rails.png&amp;#8221;, but asset_path and asset_url work as expected. &lt;a href=&quot;https://github.com/rails/sass-rails/issues/11&quot;&gt;Here&lt;/a&gt; is the bug (closed already).&lt;/p&gt;
+&lt;h2&gt;Deploying to Heroku, S3, CloudFront&lt;/h2&gt;
+&lt;p&gt;Running Rails asset pipeline in development mode is quite slow (in fact too slow if you ask me), so for deployment to production you will want to precompile your assets. If a file exists under public/assets it will be served by rails without invoking the asset pipeline and recompiling the file.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;rake assets:precompile RAILS_ENV=production&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;Setting production environment is important here. The result of precompilation is the public/assets folder populated with all your compiled .js and .css fiels with MD5 hash included to the name. If you use sass-rails asset helpers, the paths inside css will also be rewriten to point to the fingerprinted assets.&lt;/p&gt;
+&lt;p&gt;Once the assets were precompiled, you can either add them to git, and deploy like that, or upload them to S3, and change config.asset_host to point to your S3 bucket host.&lt;/p&gt;
+&lt;p&gt;(More to be added)&lt;/p&gt;
 &lt;h2&gt;Final cleanup&lt;/h2&gt;
-&lt;h2&gt;References&lt;/h2&gt;
-&lt;p&gt;&lt;a href=&quot;http://blog.nodeta.com/2011/06/14/rails-3-1-asset-pipeline-in-the-real-world/&quot;&gt;Rails 3.1 Asset Pipeline in the Real World&lt;/a&gt;&lt;br /&gt;
-&lt;a href=&quot;https://gist.github.com/1032551&quot;&gt;Trying to get Compass working with the Rails 3.1 asset pipeline&lt;/a&gt;&lt;/p&gt;</content>
+&lt;p&gt;The final cleanup consists of removing jammit and/or jammit-s3 gems from Gemfile, &lt;code&gt;bundle install&lt;/code&gt; it, removing config/assets.yml, calls to include jammit packages from the layout markup.&lt;/p&gt;
+&lt;h2&gt;References&lt;br /&gt;
+&lt;a href=&quot;http://ryanbigg.com/guides/asset_pipeline.html&quot;&gt;Rails Guides Asset Pipeline&lt;/a&gt;&lt;br /&gt;
+&lt;a href=&quot;http://blog.nodeta.com/2011/06/14/rails-3-1-asset-pipeline-in-the-real-world/&quot;&gt;Rails 3.1 Asset Pipeline in the Real World&lt;/a&gt;&lt;br /&gt;
+&lt;a href=&quot;https://gist.github.com/1032551&quot;&gt;Trying to get Compass working with the Rails 3.1 asset pipeline&lt;/a&gt;&lt;/h2&gt;</content>
  </entry>
  
  <entry>
