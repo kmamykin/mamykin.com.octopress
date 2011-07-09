@@ -73,6 +73,8 @@ You can modify the values of the config hash inside your config/application.rb o
 	<li>Move images from public/images to app/assets/images. Note that the paths hardcoded in stylesheets may be broken (we will fix it later)</li>
 	<li>Restart server, most of the site should be functioning. Watch the server console output for the assets it processeing and any broken asset linkss</li>
 </ol>
+<p>Tip: by default Sprockets will concatenate all your javascripts into one /assets/application.js event in development environment. This may not be ideal if you have lots of files and need debugging. Adding :debug =&gt; true to the calls to include_javascript solves the issue:<br />
+<code>= javascript_include_tag 'application', :debug =&gt; Rails.env.development?</code></p>
 <h2>Shifting some weight to sprockets</h2>
 <p>Here we make asset pipeline serve jquery, jquery_ujs and jquery-ui javascript files that are bundled in jquery-rails gem.</p>
 <ol>
