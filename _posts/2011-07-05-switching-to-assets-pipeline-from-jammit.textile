@@ -110,7 +110,7 @@ h3. Other gotchas and tips
 
 If you are useing Sass's @@import "somepartial";@ in your application.css.scss, the partial file should be named @_somepartial.css.scss@ (.css.scss ending is important), otherwise variables defined in that partial will not be visible outside of that partial, and you will get @Sass::SyntaxError: Undefined variable: "$xxx"@.
 
-jQuery UI images are referenced from jQuery UI stylesheet as a relative url('images/image-xxx.png'), and this link gets broken because the final stylesheet that gets served to the browser is /assets/application.css. Instead of modifying jquery ui css, I moved the images under public/assets/images. This may not be the best solution but allows for a drop-in jquery-ui styles replacement without modifying all internal references to images.
+jQuery UI images are referenced from jQuery UI stylesheet as a relative url('images/image-xxx.png'), and this link gets broken because the final stylesheet that gets served to the browser is /assets/application.css. Instead of modifying jquery ui css, I moved the images under app/assets/images/images. This allows for a drop-in jquery-ui styles replacement without modifying all internal references to images.
 
 If you are using Mongoid, you may notice that rendering a page takes forever, every image request takes a while. Apparently this is due to Mongoid preloading all models (and hittng mongod) for every request, even for an image. Adding 
 @config.mongoid.preload_models = false@

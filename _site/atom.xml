@@ -4,7 +4,7 @@
  <title>Kliment Mamykin</title>
  <link href="http://mamykin.com/atom.xml" rel="self"/>
  <link href="http://mamykin.com/"/>
- <updated>2011-07-09T04:16:49-04:00</updated>
+ <updated>2011-07-09T16:27:31-04:00</updated>
  <id>http://mamykin.com/</id>
  <author>
    <name>Kliment Mamykin</name>
@@ -108,7 +108,7 @@ You can modify the values of the config hash inside your config/application.rb o
 &lt;/div&gt;&lt;p&gt;Infortunately at the time of the this post using image-url(&amp;#8220;rails.png&amp;#8221;) returns &amp;#8220;/images/rails/png?1234534&amp;#8221; instead of &amp;#8220;/assets/rails.png&amp;#8221;, but asset_path and asset_url work as expected. &lt;a href=&quot;https://github.com/rails/sass-rails/issues/11&quot;&gt;Here&lt;/a&gt; is the bug (closed already).&lt;/p&gt;
 &lt;h3&gt;Other gotchas and tips&lt;/h3&gt;
 &lt;p&gt;If you are useing Sass&amp;#8217;s &lt;code&gt;@import &quot;somepartial&quot;;&lt;/code&gt; in your application.css.scss, the partial file should be named &lt;code&gt;_somepartial.css.scss&lt;/code&gt; (.css.scss ending is important), otherwise variables defined in that partial will not be visible outside of that partial, and you will get &lt;code&gt;Sass::SyntaxError: Undefined variable: &quot;$xxx&quot;&lt;/code&gt;.&lt;/p&gt;
-&lt;p&gt;jQuery UI images are referenced from jQuery UI stylesheet as a relative url(&amp;#8216;images/image-xxx.png&amp;#8217;), and this link gets broken because the final stylesheet that gets served to the browser is /assets/application.css. Instead of modifying jquery ui css, I moved the images under public/assets/images. This may not be the best solution but allows for a drop-in jquery-ui styles replacement without modifying all internal references to images.&lt;/p&gt;
+&lt;p&gt;jQuery UI images are referenced from jQuery UI stylesheet as a relative url(&amp;#8216;images/image-xxx.png&amp;#8217;), and this link gets broken because the final stylesheet that gets served to the browser is /assets/application.css. Instead of modifying jquery ui css, I moved the images under app/assets/images/images. This allows for a drop-in jquery-ui styles replacement without modifying all internal references to images.&lt;/p&gt;
 &lt;p&gt;If you are using Mongoid, you may notice that rendering a page takes forever, every image request takes a while. Apparently this is due to Mongoid preloading all models (and hittng mongod) for every request, even for an image. Adding &lt;br /&gt;
 &lt;code&gt;config.mongoid.preload_models = false&lt;/code&gt;&lt;br /&gt;
 in your config/environments/development.rb makes your migration much much faster. (&lt;a href=&quot;http://mongoid.org/docs/rails/railties.html&quot;&gt;Beware if you are using single collection inheritance&lt;/a&gt;)&lt;/p&gt;
