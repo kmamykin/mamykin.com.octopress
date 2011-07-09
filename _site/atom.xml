@@ -4,7 +4,7 @@
  <title>Kliment Mamykin</title>
  <link href="http://mamykin.com/atom.xml" rel="self"/>
  <link href="http://mamykin.com/"/>
- <updated>2011-07-07T17:15:39-04:00</updated>
+ <updated>2011-07-09T04:13:04-04:00</updated>
  <id>http://mamykin.com/</id>
  <author>
    <name>Kliment Mamykin</name>
@@ -86,8 +86,8 @@ You can modify the values of the config hash inside your config/application.rb o
 	&lt;li&gt;To test, add &lt;code&gt;@import &quot;blueprint/reset&quot;;&lt;/code&gt; into app/assets/stylesheets/application.css.scss, restart the server and inspect the content of /assets/application.css&lt;/li&gt;
 &lt;/ol&gt;
 &lt;h2&gt;Migrating the rest of the assets&lt;/h2&gt;
+&lt;h3&gt;Asset helpers&lt;/h3&gt;
 &lt;p&gt;There is a lovely &lt;a href=&quot;https://github.com/rails/rails/issues/1209&quot;&gt;discussion&lt;/a&gt; going on the usage of helper functions to link assets (images/audio/fonts etc) inside your css. While some people suggested using &lt;span class=&quot;caps&quot;&gt;ERB&lt;/span&gt; preprocessing and renaming your stylesheets to application.css.scss.erb, there is a better solution. sass-rails gem to the rescue.&lt;/p&gt;
-&lt;h3&gt;New helpers&lt;/h3&gt;
 &lt;p&gt;sass-rails gem defines new helpers to use inside scss templates. From sass-rails gem &lt;span class=&quot;caps&quot;&gt;README&lt;/span&gt;:&lt;/p&gt;
 &lt;ul&gt;
 	&lt;li&gt;`asset_path($relative-asset-path, $asset-class)` &amp;#8211; Returns a string to the asset.&lt;br /&gt;
@@ -106,12 +106,21 @@ You can modify the values of the config hash inside your config/application.rb o
 &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;
 &lt;/div&gt;&lt;p&gt;Infortunately at the time of the this post using image-url(&amp;#8220;rails.png&amp;#8221;) returns &amp;#8220;/images/rails/png?1234534&amp;#8221; instead of &amp;#8220;/assets/rails.png&amp;#8221;, but asset_path and asset_url work as expected. &lt;a href=&quot;https://github.com/rails/sass-rails/issues/11&quot;&gt;Here&lt;/a&gt; is the bug (closed already).&lt;/p&gt;
+&lt;h3&gt;Other gotchas and tips&lt;/h3&gt;
+&lt;p&gt;If you are useing Sass&amp;#8217;s &lt;code&gt;@import &quot;somepartial&quot;;&lt;/code&gt; in your application.css.scss, the partial file should be named &lt;code&gt;_somepartial.css.scss&lt;/code&gt; (.css.scss ending is important), otherwise variables defined in that partial will not be visible outside of that partial, and you will get &lt;code&gt;Sass::SyntaxError: Undefined variable: &quot;$xxx&quot;&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;jQuery UI images are referenced from jQuery UI stylesheet as a relative url(&amp;#8216;images/image-xxx.png&amp;#8217;), and this link gets broken because the final stylesheet that gets served to the browser is /assets/application.css. Instead of modifying jquery ui css, I moved the images under public/assets/images. This may not be the best solution but allows for a drop-in jquery-ui styles replacement without modifying all internal references to images.&lt;/p&gt;
+&lt;p&gt;If you are using Mongoid, you may notice that rendering a page takes forever, every image request takes a while. Apparently this is due to Mongoid preloading all models (and hittng mongod) for every request, even for an image. Adding &lt;br /&gt;
+&lt;code&gt;config.mongoid.preload_models = false&lt;/code&gt;&lt;br /&gt;
+in your config/environments/development.rb makes your migration much much faster. (&lt;a href=&quot;http://mongoid.org/docs/rails/railties.html&quot;&gt;Beware if you are using single collection inheritance&lt;/a&gt;)&lt;/p&gt;
 &lt;h2&gt;Deploying to Heroku, S3, CloudFront&lt;/h2&gt;
-&lt;p&gt;Running Rails asset pipeline in development mode is quite slow (in fact too slow if you ask me), so for deployment to production you will want to precompile your assets. If a file exists under public/assets it will be served by rails without invoking the asset pipeline and recompiling the file.&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;rake assets:precompile RAILS_ENV=production&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;Running Rails asset pipeline in development mode is recompiling css/js/images on each request, so for deployment to production you will want to precompile your assets. If a file exists under public/assets it will be served by rails without invoking the asset pipeline and recompiling the file.&lt;/p&gt;
+&lt;p&gt;To compile assets rails comes with assets:precompile rake task.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;bundle exec rake assets:precompile RAILS_ENV=production&lt;/code&gt;&lt;/p&gt;
 &lt;p&gt;Setting production environment is important here. The result of precompilation is the public/assets folder populated with all your compiled .js and .css fiels with MD5 hash included to the name. If you use sass-rails asset helpers, the paths inside css will also be rewriten to point to the fingerprinted assets.&lt;/p&gt;
-&lt;p&gt;Once the assets were precompiled, you can either add them to git, and deploy like that, or upload them to S3, and change config.asset_host to point to your S3 bucket host.&lt;/p&gt;
-&lt;p&gt;(More to be added)&lt;/p&gt;
+&lt;p&gt;Once the assets were precompiled its up to you how they make it to production server. You can either add them to git, and deploy like that, or upload them to S3, + change config.asset_host to point to your S3 bucket host. Gems like &lt;a href=&quot;https://github.com/moocode/asset_id&quot;&gt;asset_id&lt;/a&gt; can be helpful here.&lt;/p&gt;
+&lt;p&gt;I opted to add precompiled assets to my git repo and create a CloudFront distribution with the origin server as my production server. Then you need to change config.asset_host to that distribution&amp;#8217;s domain name inside config/environments/production.rb. This removed the step of uploading files to S3, makes deployment faster (and the fewer moving parts the better).&lt;/p&gt;
+&lt;p&gt;The only gotcha here is that running assets:precompile with RAILS_ENV=production loads the whole rails environment and mongoid wants to connect to the production database and fails. My config/mondoid.yml uses MONGOHQ_URL for connection, so to trick rails I just passed this env var to the rake task:&lt;br /&gt;
+&lt;code&gt;bundle exec rake assets:precompile RAILS_ENV=production MONGOHQ_URL=mongodb://myuser:mypasswd&lt;/code&gt;localhost/db_development@&lt;/p&gt;
 &lt;h2&gt;Final cleanup&lt;/h2&gt;
 &lt;p&gt;The final cleanup consists of removing jammit and/or jammit-s3 gems from Gemfile, &lt;code&gt;bundle install&lt;/code&gt; it, removing config/assets.yml, calls to include jammit packages from the layout markup.&lt;/p&gt;
 &lt;h2&gt;References&lt;br /&gt;
