@@ -4,7 +4,7 @@
  <title>Kliment Mamykin</title>
  <link href="http://mamykin.com/atom.xml" rel="self"/>
  <link href="http://mamykin.com/"/>
- <updated>2011-07-09T16:43:04-04:00</updated>
+ <updated>2011-07-10T05:55:06-04:00</updated>
  <id>http://mamykin.com/</id>
  <author>
    <name>Kliment Mamykin</name>
@@ -123,10 +123,19 @@ in your config/environments/development.rb makes your migration much much faster
 &lt;p&gt;I opted to add precompiled assets to my git repo and create a CloudFront distribution with the origin server as my production server. Then you need to change config.asset_host to that distribution&amp;#8217;s domain name inside config/environments/production.rb. This removed the step of uploading files to S3, makes deployment faster (and the fewer moving parts the better).&lt;/p&gt;
 &lt;p&gt;The only gotcha here is that running assets:precompile with RAILS_ENV=production loads the whole rails environment and mongoid wants to connect to the production database and fails. My config/mondoid.yml uses MONGOHQ_URL for connection, so to trick rails I just passed this env var to the rake task:&lt;br /&gt;
 &lt;code&gt;bundle exec rake assets:precompile RAILS_ENV=production MONGOHQ_URL=mongodb://myuser:mypasswd&lt;/code&gt;localhost/db_development@&lt;/p&gt;
-&lt;h2&gt;Final cleanup&lt;/h2&gt;
+&lt;p&gt;This can be automated with a rake task&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;ruby&quot;&gt;&lt;span class=&quot;n&quot;&gt;desc&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;Compile Assets&amp;quot;&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;task&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;:assets&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;do&lt;/span&gt;
+  &lt;span class=&quot;no&quot;&gt;ENV&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;RAILS_ENV&amp;quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;production&amp;quot;&lt;/span&gt;
+  &lt;span class=&quot;no&quot;&gt;ENV&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;MONGOHQ_URL&amp;quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;mongodb://myuser:mypasswd@localhost/db_development&amp;quot;&lt;/span&gt;
+  &lt;span class=&quot;no&quot;&gt;Rake&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;Task&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;assets:precompile&amp;quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;].&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;invoke&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;&lt;h2&gt;Final cleanup&lt;/h2&gt;
 &lt;p&gt;The final cleanup consists of removing jammit and/or jammit-s3 gems from Gemfile, &lt;code&gt;bundle install&lt;/code&gt; it, removing config/assets.yml, calls to include jammit packages from the layout markup.&lt;/p&gt;
 &lt;h2&gt;References&lt;br /&gt;
 &lt;a href=&quot;http://ryanbigg.com/guides/asset_pipeline.html&quot;&gt;Rails Guides Asset Pipeline&lt;/a&gt;&lt;br /&gt;
+&lt;a href=&quot;http://ryanbigg.com/2011/06/sprocket-asset-tags-internals/&quot;&gt;Sprocket asset tag internals&lt;/a&gt;&lt;br /&gt;
 &lt;a href=&quot;http://blog.nodeta.com/2011/06/14/rails-3-1-asset-pipeline-in-the-real-world/&quot;&gt;Rails 3.1 Asset Pipeline in the Real World&lt;/a&gt;&lt;br /&gt;
 &lt;a href=&quot;https://gist.github.com/1032551&quot;&gt;Trying to get Compass working with the Rails 3.1 asset pipeline&lt;/a&gt;&lt;/h2&gt;</content>
  </entry>

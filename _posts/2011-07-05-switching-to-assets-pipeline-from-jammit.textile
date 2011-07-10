@@ -130,12 +130,24 @@ To compile assets rails comes with assets:precompile rake task.
 
 Setting production environment is important here. The result of precompilation is the public/assets folder populated with all your compiled .js and .css fiels with MD5 hash included to the name. If you use sass-rails asset helpers, the paths inside css will also be rewriten to point to the fingerprinted assets. 
 
+
 Once the assets were precompiled its up to you how they make it to production server. You can either add them to git, and deploy like that, or upload them to S3, + change config.asset_host to point to your S3 bucket host. Gems like "asset_id":https://github.com/moocode/asset_id can be helpful here.
 
 I opted to add precompiled assets to my git repo and create a CloudFront distribution with the origin server as my production server. Then you need to change config.asset_host to that distribution's domain name inside config/environments/production.rb. This removed the step of uploading files to S3, makes deployment faster (and the fewer moving parts the better).
 
 The only gotcha here is that running assets:precompile with RAILS_ENV=production loads the whole rails environment and mongoid wants to connect to the production database and fails. My config/mondoid.yml uses MONGOHQ_URL for connection, so to trick rails I just passed this env var to the rake task:
 @bundle exec rake assets:precompile RAILS_ENV=production MONGOHQ_URL=mongodb://myuser:mypasswd@localhost/db_development@
+
+This can be automated with a rake task
+
+{% highlight ruby %}
+desc "Compile Assets"
+task :assets do
+  ENV["RAILS_ENV"] = "production"
+  ENV["MONGOHQ_URL"] = "mongodb://myuser:mypasswd@localhost/db_development"
+  Rake::Task["assets:precompile"].invoke
+end
+{% endhighlight %}
 
 
 h2. Final cleanup
@@ -144,5 +156,6 @@ The final cleanup consists of removing jammit and/or jammit-s3 gems from Gemfile
 
 h2. References
 "Rails Guides Asset Pipeline":http://ryanbigg.com/guides/asset_pipeline.html
+"Sprocket asset tag internals":http://ryanbigg.com/2011/06/sprocket-asset-tags-internals/
 "Rails 3.1 Asset Pipeline in the Real World":http://blog.nodeta.com/2011/06/14/rails-3-1-asset-pipeline-in-the-real-world/
 "Trying to get Compass working with the Rails 3.1 asset pipeline":https://gist.github.com/1032551

@@ -130,10 +130,19 @@ in your config/environments/development.rb makes your migration much much faster
 <p>I opted to add precompiled assets to my git repo and create a CloudFront distribution with the origin server as my production server. Then you need to change config.asset_host to that distribution&#8217;s domain name inside config/environments/production.rb. This removed the step of uploading files to S3, makes deployment faster (and the fewer moving parts the better).</p>
 <p>The only gotcha here is that running assets:precompile with RAILS_ENV=production loads the whole rails environment and mongoid wants to connect to the production database and fails. My config/mondoid.yml uses MONGOHQ_URL for connection, so to trick rails I just passed this env var to the rake task:<br />
 <code>bundle exec rake assets:precompile RAILS_ENV=production MONGOHQ_URL=mongodb://myuser:mypasswd</code>localhost/db_development@</p>
-<h2>Final cleanup</h2>
+<p>This can be automated with a rake task</p>
+<div class="highlight"><pre><code class="ruby"><span class="n">desc</span> <span class="s2">&quot;Compile Assets&quot;</span>
+<span class="n">task</span> <span class="ss">:assets</span> <span class="k">do</span>
+  <span class="no">ENV</span><span class="o">[</span><span class="s2">&quot;RAILS_ENV&quot;</span><span class="o">]</span> <span class="o">=</span> <span class="s2">&quot;production&quot;</span>
+  <span class="no">ENV</span><span class="o">[</span><span class="s2">&quot;MONGOHQ_URL&quot;</span><span class="o">]</span> <span class="o">=</span> <span class="s2">&quot;mongodb://myuser:mypasswd@localhost/db_development&quot;</span>
+  <span class="no">Rake</span><span class="o">::</span><span class="no">Task</span><span class="o">[</span><span class="s2">&quot;assets:precompile&quot;</span><span class="o">].</span><span class="n">invoke</span>
+<span class="k">end</span>
+</code></pre>
+</div><h2>Final cleanup</h2>
 <p>The final cleanup consists of removing jammit and/or jammit-s3 gems from Gemfile, <code>bundle install</code> it, removing config/assets.yml, calls to include jammit packages from the layout markup.</p>
 <h2>References<br />
 <a href="http://ryanbigg.com/guides/asset_pipeline.html">Rails Guides Asset Pipeline</a><br />
+<a href="http://ryanbigg.com/2011/06/sprocket-asset-tags-internals/">Sprocket asset tag internals</a><br />
 <a href="http://blog.nodeta.com/2011/06/14/rails-3-1-asset-pipeline-in-the-real-world/">Rails 3.1 Asset Pipeline in the Real World</a><br />
 <a href="https://gist.github.com/1032551">Trying to get Compass working with the Rails 3.1 asset pipeline</a></h2>
 </div>
