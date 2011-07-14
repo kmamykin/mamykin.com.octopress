@@ -33,6 +33,11 @@
 	<li>Ability to use existing js/css libraries packaged as gems</li>
 	<li>Better asset versioning with MD5 and easier time with CDNs (=faster deployments, less hacks)</li>
 </ol>
+<p><strong>Update: 2011/07/14</strong> &#8211; currently the changes described here are sitting on a branch and are not merged to my master. The main reason is that the deployment story of the asset pipeline has its kinks that need to be worked out. Specifically deployment to heroku.com is kind of weak. For me it comes down to two issues:</p>
+<ol>
+	<li>Precompiling assets requires setting rake to production environment. This is more of an inconvenience or a bug, but <code>rake assets:precompile</code> should just take the production settings and compile the assets as if they were in production. Its binary, you either compile and serve it on the fly, or serve precompiled.</li>
+	<li>In development, rails keeps serving precompiling assets instead of serving updated js/css. Precompiling the assets and adding them to git for deployment works (whatever the purists may say regarding generated artifacts under source control). But once you are back to development, you are up for a surprise. Rails will keep serving precompiled files. Wut? Now you need to start monkeying around with <code>git rm public/assets</code>, hack, precompile, <code>git commit -a public/assets</code>, &#8230; bah.</li>
+</ol>
 <h2>Migration approach</h2>
 <ol>
 	<li>Making sprockets asset pipeline work in parallel with Jammit</li>

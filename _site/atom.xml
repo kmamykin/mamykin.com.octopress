@@ -4,7 +4,7 @@
  <title>Kliment Mamykin</title>
  <link href="http://mamykin.com/atom.xml" rel="self"/>
  <link href="http://mamykin.com/"/>
- <updated>2011-07-10T05:55:06-04:00</updated>
+ <updated>2011-07-14T17:22:10-04:00</updated>
  <id>http://mamykin.com/</id>
  <author>
    <name>Kliment Mamykin</name>
@@ -25,6 +25,11 @@
 	&lt;li&gt;Support from a larger community&lt;/li&gt;
 	&lt;li&gt;Ability to use existing js/css libraries packaged as gems&lt;/li&gt;
 	&lt;li&gt;Better asset versioning with MD5 and easier time with CDNs (=faster deployments, less hacks)&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;&lt;strong&gt;Update: 2011/07/14&lt;/strong&gt; &amp;#8211; currently the changes described here are sitting on a branch and are not merged to my master. The main reason is that the deployment story of the asset pipeline has its kinks that need to be worked out. Specifically deployment to heroku.com is kind of weak. For me it comes down to two issues:&lt;/p&gt;
+&lt;ol&gt;
+	&lt;li&gt;Precompiling assets requires setting rake to production environment. This is more of an inconvenience or a bug, but &lt;code&gt;rake assets:precompile&lt;/code&gt; should just take the production settings and compile the assets as if they were in production. Its binary, you either compile and serve it on the fly, or serve precompiled.&lt;/li&gt;
+	&lt;li&gt;In development, rails keeps serving precompiling assets instead of serving updated js/css. Precompiling the assets and adding them to git for deployment works (whatever the purists may say regarding generated artifacts under source control). But once you are back to development, you are up for a surprise. Rails will keep serving precompiled files. Wut? Now you need to start monkeying around with &lt;code&gt;git rm public/assets&lt;/code&gt;, hack, precompile, &lt;code&gt;git commit -a public/assets&lt;/code&gt;, &amp;#8230; bah.&lt;/li&gt;
 &lt;/ol&gt;
 &lt;h2&gt;Migration approach&lt;/h2&gt;
 &lt;ol&gt;

@@ -14,6 +14,11 @@ My motivations for migrating to the Rails built-in asset pipeline:
 # Ability to use existing js/css libraries packaged as gems
 # Better asset versioning with MD5 and easier time with CDNs (=faster deployments, less hacks)
 
+*Update: 2011/07/14* - currently the changes described here are sitting on a branch and are not merged to my master. The main reason is that the deployment story of the asset pipeline has its kinks that need to be worked out. Specifically deployment to heroku.com is kind of weak. For me it comes down to two issues:
+# Precompiling assets requires setting rake to production environment. This is more of an inconvenience or a bug, but @rake assets:precompile@ should just take the production settings and compile the assets as if they were in production. Its binary, you either compile and serve it on the fly, or serve precompiled. 
+# In development, rails keeps serving precompiling assets instead of serving updated js/css. Precompiling the assets and adding them to git for deployment works (whatever the purists may say regarding generated artifacts under source control). But once you are back to development, you are up for a surprise. Rails will keep serving precompiled files. Wut? Now you need to start monkeying around with @git rm public/assets@, hack, precompile, @git commit -a public/assets@, ... bah.
+
+
 h2. Migration approach
 
 # Making sprockets asset pipeline work in parallel with Jammit
