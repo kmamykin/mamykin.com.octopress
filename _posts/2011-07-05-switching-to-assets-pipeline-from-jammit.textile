@@ -7,7 +7,7 @@ h1. {{ page.title }}
 
 h2. Overview
 
-In my "previous post":/2011/07/03/upgrading-to-rails31-rc4.html I described the steps necessary to upgrade an existing application to Rails 3.1, but the post did not go into details about how to migrate an existing collection of assets (in my case packaged using Jammit/Jammit-S2 gems) to Sprockets based asset pipeline. Here we dive into the nitty gritty of the migration.
+In my "previous post":/2011/07/03/upgrading-to-rails31-rc4.html I described the steps necessary to upgrade an existing application to Rails 3.1, but the post did not go into details about how to migrate an existing collection of assets (in my case packaged using Jammit/Jammit-S3 gems) to Sprockets based asset pipeline. Here we dive into the nitty gritty of the migration.
 
 My motivations for migrating to the Rails built-in asset pipeline:
 # Support from a larger community
