@@ -25,19 +25,16 @@
   
   <div id="post">
 <h1>Migrating from Jammit to Asset Pipeline in Rails 3.1</h1>
+<p><strong>Update: 2011/08/04</strong> &#8211; with the release of rails 3.1.0.rc5 the deployment story solidified, and heroku guys published <a href="http://devcenter.heroku.com/articles/rails31_heroku_cedar">a blog post how to deploy 3.1 asset pipeline.</a>.</p>
+<h2><span class="caps">TLDR</span> version:</h2>
+<ul>
+	<li>&#8220;<span class="caps">WTF</span> is sprockets? I love my jammit setup!&#8221;. You can still upgrade to rails 3.1, disable asset pipeline with <code>config.assets.enabled=false</code> and jammit will be happy.</li>
+	<li>Asset fingerprinting <strong>really</strong> simplifies deployment to CDNs, specifically Amazon&#8217;s CloudFront.</li>
+	<li>Heroku.com now supports compiling assets on the fly, but <strong>requires Cedar stack</strong>. Stack migration is not to be taken lightly.</li>
+	<li>Things are still in flux, some gem version combinations are incompatible, etc etc, but you knew that didn&#8217;t you? Here is a <a href="http://gist.github.com/1124723">gist of the important files</a></li>
+</ul>
 <h2>Overview</h2>
 <p>In my <a href="/2011/07/03/upgrading-to-rails31-rc4.html">previous post</a> I described the steps necessary to upgrade an existing application to Rails 3.1, but the post did not go into details about how to migrate an existing collection of assets (in my case packaged using Jammit/Jammit-S3 gems) to Sprockets based asset pipeline. Here we dive into the nitty gritty of the migration.</p>
-<p>My motivations for migrating to the Rails built-in asset pipeline:</p>
-<ol>
-	<li>Support from a larger community</li>
-	<li>Ability to use existing js/css libraries packaged as gems</li>
-	<li>Better asset versioning with MD5 and easier time with CDNs (=faster deployments, less hacks)</li>
-</ol>
-<p><strong>Update: 2011/07/14</strong> &#8211; currently the changes described here are sitting on a branch and are not merged to my master. The main reason is that the deployment story of the asset pipeline has its kinks that need to be worked out. Specifically deployment to heroku.com is kind of weak. For me it comes down to two issues:</p>
-<ol>
-	<li>Precompiling assets requires setting rake to production environment. This is more of an inconvenience or a bug, but <code>rake assets:precompile</code> should just take the production settings and compile the assets as if they were in production. Its binary, you either compile and serve it on the fly, or serve precompiled.</li>
-	<li>In development, rails keeps serving precompiling assets instead of serving updated js/css. Precompiling the assets and adding them to git for deployment works (whatever the purists may say regarding generated artifacts under source control). But once you are back to development, you are up for a surprise. Rails will keep serving precompiled files. Wut? Now you need to start monkeying around with <code>git rm public/assets</code>, hack, precompile, <code>git commit -a public/assets</code>, &#8230; bah.</li>
-</ol>
 <h2>Migration approach</h2>
 <ol>
 	<li>Making sprockets asset pipeline work in parallel with Jammit</li>
@@ -47,39 +44,26 @@
 	<li>Deploying to Heroku, S3, CloudFront</li>
 	<li>Final cleanup</li>
 </ol>
-<h2>Asset Pipeline configuration</h2>
+<h2>A primer to asset pipeline configuration</h2>
 <p>Rails exposes app.config.assets hash during Rails initialization process. <br />
-You can modify the values of the config hash inside your config/application.rb or config/environments/xxx.rb.</p>
-<p>Here is the definition of the assets config hash with the defaults:<br />
-<a href="https://github.com/rails/rails/blob/master/railties/lib/rails/application/configuration.rb">$GEM_HOME/gems/railties-3.1.0.xxx/lib/rails/application/coniguration.rb</a></p>
-<div class="highlight"><pre><code class="ruby"><span class="vi">@assets</span> <span class="o">=</span> <span class="no">ActiveSupport</span><span class="o">::</span><span class="no">OrderedOptions</span><span class="o">.</span><span class="n">new</span>
-<span class="vi">@assets</span><span class="o">.</span><span class="n">enabled</span>    <span class="o">=</span> <span class="kp">false</span>
-<span class="vi">@assets</span><span class="o">.</span><span class="n">paths</span>      <span class="o">=</span> <span class="o">[]</span>
-<span class="vi">@assets</span><span class="o">.</span><span class="n">precompile</span> <span class="o">=</span> <span class="o">[</span><span class="sr"> /\w+\.(?!js|css).+/</span><span class="p">,</span> <span class="s2">&quot;application.js&quot;</span><span class="p">,</span> <span class="s2">&quot;application.css&quot;</span> <span class="o">]</span>
-<span class="vi">@assets</span><span class="o">.</span><span class="n">prefix</span>     <span class="o">=</span> <span class="s2">&quot;/assets&quot;</span>
-
-<span class="vi">@assets</span><span class="o">.</span><span class="n">js_compressor</span>  <span class="o">=</span> <span class="kp">nil</span>
-<span class="vi">@assets</span><span class="o">.</span><span class="n">css_compressor</span> <span class="o">=</span> <span class="kp">nil</span>
-</code></pre>
-</div><p>The usage of app.config.assets is defined here: <a href="https://github.com/rails/rails/blob/master/actionpack/lib/sprockets/railtie.rb">$GEM_HOME/gems/actionpack-3.1.0.xxx/lib/sprockets/railtie.rb</a></p>
+You can modify the values of the config hash inside your config/application.rb or config/environments/xxx.rb.<br />
+Here is the <a href="https://github.com/rails/rails/blob/master/railties/lib/rails/application/configuration.rb">definition of the assets config hash with the defaults</a></p>
 <ul>
-	<li>config.assets.enabled &#8211; disables the whole processing of assets. Meaning all you assets should reside and sill be served from Rails.public_path.</li>
-	<li>config.assets.path &#8211; is an array of paths populated at Rails initialization process with directories where assets are located.</li>
-	<li>config.assets.precompile &#8211; an array of filename patterns that will be precompiled when running <code>rake assets:precompile</code>. If you have more then one package of js or css (e.g. application.css and mobile.css), you should <code>config.assets.precompile += %w( mobile.css )</code> in your config/application.rb</li>
-	<li>config.prefix &#8211; the path Sprockets asset pipeline will mount on to serve compiled assets. Please note that as of Rails 3.1.0.rc4 there is a bug where <a href="https://github.com/rails/rails/issues/1489">helpers dont respect config.assets.prefix</a></li>
+	<li><strong>config.assets.enabled</strong> &#8211; disables the whole processing of assets. Meaning all you assets should reside and sill be served from Rails.public_path.</li>
+	<li><strong>config.assets.path</strong> &#8211; is an array of paths populated at Rails initialization process with directories where assets are looked up. By default this is app/assets, lib/assets, vendor/assets plus collection of directories from gems that expose assets.</li>
+	<li><strong>config.assets.precompile</strong> &#8211; an array of filename patterns that will be precompiled when running <code>rake assets:precompile</code>. If you have more then one package of js or css (e.g. application.css and mobile.css), you should <code>config.assets.precompile += %w( mobile.css )</code> in your config/application.rb</li>
+	<li><strong>config.prefix</strong> &#8211; the path Sprockets asset pipeline will mount on to serve compiled assets.</li>
 </ul>
-<h2>Making Sprockets Asset Pipeline work in parallel with Jammit</h2>
+<h2>Making Sprockets asset pipeline work in parallel with Jammit</h2>
 <ol>
-	<li>Remove Jammit pregenerated asset files: <code>rm -rf public/assets</code>. If there are pregenerated files in /assets rails will serve those without processing your app/assets folder.</li>
+	<li>Remove Jammit pre-generated asset files: <code>rm -rf public/assets</code>. If there are pre-generated files in /assets rails will serve those without processing your app/assets folder.</li>
 	<li>Make Jammit mount on some other path by adding <code>package_path: jammit</code> to config/assets.yml</li>
 	<li>Enable asset pipeline with <code>config.assets.enabled = true</code> inside config/application.rb</li>
 	<li>Copy over app/assets folder from a newly generated rails app to your app. I also renamed application.css to application.css.scss</li>
-	<li>Add new assets to your layout with <code>= stylesheet_link_tag 'application'</code> and <code>= javascript_include_tag 'application'</code>, before corresponding Jammit calls to <code>= include_stylesheets :application</code> and <code>= include_javascripts :application</code></li>
+	<li>Include new stylesheet and javascript tags to your layout with <code>= stylesheet_link_tag 'application'</code> and <code>= javascript_include_tag 'application'</code>, before corresponding Jammit calls to <code>= include_stylesheets :application</code> and <code>= include_javascripts :application</code></li>
 	<li>Move images from public/images to app/assets/images. Note that the paths hardcoded in stylesheets may be broken (we will fix it later)</li>
-	<li>Restart server, most of the site should be functioning. Watch the server console output for the assets it processeing and any broken asset linkss</li>
+	<li>Restart server, most of the site should be functioning. Watch the server console output for the assets with broken links</li>
 </ol>
-<p>Tip: by default Sprockets will concatenate all your javascripts into one /assets/application.js event in development environment. This may not be ideal if you have lots of files and need debugging. Adding :debug =&gt; true to the calls to include_javascript solves the issue:<br />
-<code>= javascript_include_tag 'application', :debug =&gt; Rails.env.development?</code></p>
 <h2>Shifting some weight to sprockets</h2>
 <p>Here we make asset pipeline serve jquery, jquery_ujs and jquery-ui javascript files that are bundled in jquery-rails gem.</p>
 <ol>
@@ -92,17 +76,19 @@ You can modify the values of the config hash inside your config/application.rb o
 	<li>Remove bundling of jquery.js, jquery-ui.js and rails.js (replaced by jquery_ujs.js) from config/assets.yml. If you did not bundle jquery with Jammit and used a <span class="caps">CDN</span> to serve it, remove it from your layout markup.</li>
 </ol>
 <h2>Adding compass and compass extensions</h2>
-<ol>
-	<li>You need to use compass gem from github for now<br />
-<div class="highlight"><pre><code class="javascript"><span class="nx">gem</span> <span class="s1">&#39;compass&#39;</span><span class="p">,</span> <span class="o">:</span><span class="nx">git</span> <span class="o">=&gt;</span> <span class="s1">&#39;https://github.com/chriseppstein/compass.git&#39;</span><span class="p">,</span> <span class="o">:</span><span class="nx">branch</span> <span class="o">=&gt;</span> <span class="s1">&#39;rails31&#39;</span>
+<p>You need to use compass gem from github for now</p>
+<div class="highlight"><pre><code class="ruby"><span class="n">gem</span> <span class="s1">&#39;compass&#39;</span><span class="p">,</span> <span class="ss">:git</span> <span class="o">=&gt;</span> <span class="s1">&#39;https://github.com/chriseppstein/compass.git&#39;</span><span class="p">,</span> <span class="ss">:branch</span> <span class="o">=&gt;</span> <span class="s1">&#39;rails31&#39;</span>
+<span class="n">gem</span> <span class="s1">&#39;sass&#39;</span><span class="p">,</span>  <span class="s1">&#39;3.1.5&#39;</span> <span class="c1"># I had to fix this version due to a weird interaction b/w compass&#39;s blueprint and sass</span>
 </code></pre>
-</div></li>
-	<li>To test, add <code>@import "blueprint/reset";</code> into app/assets/stylesheets/application.css.scss, restart the server and inspect the content of /assets/application.css</li>
-</ol>
+</div><p>Inside config/application.rb:</p>
+<div class="highlight"><pre><code class="ruby"><span class="n">config</span><span class="o">.</span><span class="n">sass</span><span class="o">.</span><span class="n">load_paths</span> <span class="o">&lt;&lt;</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="no">Gem</span><span class="o">.</span><span class="n">loaded_specs</span><span class="o">[</span><span class="s1">&#39;compass&#39;</span><span class="o">].</span><span class="n">full_gem_path</span><span class="si">}</span><span class="s2">/frameworks/compass/stylesheets&quot;</span>
+<span class="n">config</span><span class="o">.</span><span class="n">sass</span><span class="o">.</span><span class="n">load_paths</span> <span class="o">&lt;&lt;</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="no">Gem</span><span class="o">.</span><span class="n">loaded_specs</span><span class="o">[</span><span class="s1">&#39;compass&#39;</span><span class="o">].</span><span class="n">full_gem_path</span><span class="si">}</span><span class="s2">/frameworks/blueprint/stylesheets&quot;</span>
+</code></pre>
+</div><p>I also deleted config/compass.rb, as it does not appear to be doing anything (was only used for compass cli?)</p>
+<p>To test, add <code>@import "blueprint/reset";</code> into app/assets/stylesheets/application.css.scss, restart the server and inspect the content of /assets/application.css</p>
 <h2>Migrating the rest of the assets</h2>
 <h3>Asset helpers</h3>
-<p>There is a lovely <a href="https://github.com/rails/rails/issues/1209">discussion</a> going on the usage of helper functions to link assets (images/audio/fonts etc) inside your css. While some people suggested using <span class="caps">ERB</span> preprocessing and renaming your stylesheets to application.css.scss.erb, there is a better solution. sass-rails gem to the rescue.</p>
-<p>sass-rails gem defines new helpers to use inside scss templates. From sass-rails gem <span class="caps">README</span>:</p>
+<p>sass-rails gem defines new helpers to use <strong>inside scss templates</strong>:</p>
 <ul>
 	<li>`asset_path($relative-asset-path, $asset-class)` &#8211; Returns a string to the asset.<br />
     For example: `asset_path(&#8220;rails.png&#8221;, image)` becomes `&#8220;/assets/rails.png&#8221;`</li>
@@ -119,37 +105,34 @@ You can modify the values of the config hash inside your config/application.rb o
   <span class="n">some</span><span class="o">-</span><span class="k">url</span><span class="o">:</span> <span class="n">asset</span><span class="o">-</span><span class="sx">url(&quot;rails.png&quot;, image)</span><span class="p">;</span>
 <span class="p">}</span>
 </code></pre>
-</div><p>Infortunately at the time of the this post using image-url(&#8220;rails.png&#8221;) returns &#8220;/images/rails/png?1234534&#8221; instead of &#8220;/assets/rails.png&#8221;, but asset_path and asset_url work as expected. <a href="https://github.com/rails/sass-rails/issues/11">Here</a> is the bug (closed already).</p>
-<h3>Other gotchas and tips</h3>
-<p>If you are useing Sass&#8217;s <code>@import "somepartial";</code> in your application.css.scss, the partial file should be named <code>_somepartial.css.scss</code> (.css.scss ending is important), otherwise variables defined in that partial will not be visible outside of that partial, and you will get <code>Sass::SyntaxError: Undefined variable: "$xxx"</code>.</p>
-<p>jQuery UI images are referenced from jQuery UI stylesheet as a relative url(&#8216;images/image-xxx.png&#8217;), and this link gets broken because the final stylesheet that gets served to the browser is /assets/application.css. Instead of modifying jquery ui css, I moved the images under app/assets/images/images. This allows for a drop-in jquery-ui styles replacement without modifying all internal references to images.</p>
+</div><h3>Other gotchas and tips</h3>
+<p>By default Sprockets will concatenate all your javascripts into one /assets/application.js event in development environment. This may not be ideal if you have lots of files and need debugging. Adding :debug =&gt; true to the calls to include_javascript solves the issue:<br />
+<code>= javascript_include_tag 'application', :debug =&gt; Rails.env.development?</code></p>
+<p>If you are using Sass&#8217;s <code>@import "somepartial";</code> in your application.css.scss, the partial file should be named <code>_somepartial.css.scss</code> (.css.scss ending is important), otherwise variables defined in that partial will not be visible outside of that partial, and you will get <code>Sass::SyntaxError: Undefined variable: "$xxx"</code>.</p>
+<p>jQuery UI images are referenced from jQuery UI stylesheet as a relative url(&#8216;images/image-xxx.png&#8217;), and this link gets broken because the final stylesheet that gets served to the browser is /assets/application.css. Instead of modifying jquery ui css, I moved the images under app/assets/images/images (should be vendor/assets/images/images??). This allows for a drop-in jquery-ui styles replacement without modifying all internal references to images.</p>
 <p>If you are using Mongoid, you may notice that rendering a page takes forever, every image request takes a while. Apparently this is due to Mongoid preloading all models (and hittng mongod) for every request, even for an image. Adding <br />
 <code>config.mongoid.preload_models = false</code><br />
 in your config/environments/development.rb makes your migration much much faster. (<a href="http://mongoid.org/docs/rails/railties.html">Beware if you are using single collection inheritance</a>)</p>
-<h2>Deploying to Heroku, S3, CloudFront</h2>
-<p>Running Rails asset pipeline in development mode is recompiling css/js/images on each request, so for deployment to production you will want to precompile your assets. If a file exists under public/assets it will be served by rails without invoking the asset pipeline and recompiling the file.</p>
-<p>To compile assets rails comes with assets:precompile rake task.</p>
+<h2>Deploying to Heroku with CloudFront <span class="caps">CDN</span></h2>
+<p>Running Rails asset pipeline in development mode will recompile css/js/images on each request, so for deployment to production you will want to precompile your assets. If a file exists under public/assets it will be served by rails without invoking the asset pipeline and recompiling the file.</p>
+<p>Generally, to compile the assets, rails comes with assets:precompile rake task.</p>
 <p><code>bundle exec rake assets:precompile RAILS_ENV=production</code></p>
-<p>Setting production environment is important here. The result of precompilation is the public/assets folder populated with all your compiled .js and .css fiels with MD5 hash included to the name. If you use sass-rails asset helpers, the paths inside css will also be rewriten to point to the fingerprinted assets.</p>
-<p>Once the assets were precompiled its up to you how they make it to production server. You can either add them to git, and deploy like that, or upload them to S3, + change config.asset_host to point to your S3 bucket host. Gems like <a href="https://github.com/moocode/asset_id">asset_id</a> can be helpful here.</p>
-<p>I opted to add precompiled assets to my git repo and create a CloudFront distribution with the origin server as my production server. Then you need to change config.asset_host to that distribution&#8217;s domain name inside config/environments/production.rb. This removed the step of uploading files to S3, makes deployment faster (and the fewer moving parts the better).</p>
-<p>The only gotcha here is that running assets:precompile with RAILS_ENV=production loads the whole rails environment and mongoid wants to connect to the production database and fails. My config/mondoid.yml uses MONGOHQ_URL for connection, so to trick rails I just passed this env var to the rake task:<br />
-<code>bundle exec rake assets:precompile RAILS_ENV=production MONGOHQ_URL=mongodb://myuser:mypasswd</code>localhost/db_development@</p>
-<p>This can be automated with a rake task</p>
-<div class="highlight"><pre><code class="ruby"><span class="n">desc</span> <span class="s2">&quot;Compile Assets&quot;</span>
-<span class="n">task</span> <span class="ss">:assets</span> <span class="k">do</span>
-  <span class="no">ENV</span><span class="o">[</span><span class="s2">&quot;RAILS_ENV&quot;</span><span class="o">]</span> <span class="o">=</span> <span class="s2">&quot;production&quot;</span>
-  <span class="no">ENV</span><span class="o">[</span><span class="s2">&quot;MONGOHQ_URL&quot;</span><span class="o">]</span> <span class="o">=</span> <span class="s2">&quot;mongodb://myuser:mypasswd@localhost/db_development&quot;</span>
-  <span class="no">Rake</span><span class="o">::</span><span class="no">Task</span><span class="o">[</span><span class="s2">&quot;assets:precompile&quot;</span><span class="o">].</span><span class="n">invoke</span>
-<span class="k">end</span>
-</code></pre>
-</div><h2>Final cleanup</h2>
+<p>Setting production environment is important here, and therefore the guideline is to run it on the production server. The result of precompilation is the public/assets folder populated with all your compiled .js and .css fiels with MD5 hash included to the name. If you use sass-rails asset helpers, the paths inside css will also be rewritten to point to the fingerprinted assets.</p>
+<p><a href="http://devcenter.heroku.com/articles/rails31_heroku_cedar">Heroku now supports 3.1 asset compilation on their cedar stack</a></p>
+<p>Once the app is deployed, heroku will compile requested assets on their cache miss, and store it in the app&#8217;s tmp directory automatically, solving the long stanging issue of hacking its read-only filesystem.</p>
+<p>Oddly, it looks like precompiling assets has no effect on heroku (e.g. with <code>heroku run rake -t assets:precompile</code>), it sill recompiles them on the first request.</p>
+<p>Once you app can compile and serve the assets, you can setup an Amazon CloudFront <span class="caps">CDN</span> distribution with your server as the origin server. Then include the distribution&#8217;s domain name into</p>
+<p><code>config.action_controller.asset_host = "xxxxxxxxxxxxx.cloudfront.net"</code></p>
+<p>With Jammit you had to jump through the hoops, rewrite asset paths to bust <span class="caps">CDN</span> caches, upload to S3. With the fingerprinted assets, you just push your app to production and CloudFront will cache the assets on its servers. This is a big win for me as it removes a somewhat lengthy process of uploading all assets to S3.</p>
+<h2>Final cleanup</h2>
 <p>The final cleanup consists of removing jammit and/or jammit-s3 gems from Gemfile, <code>bundle install</code> it, removing config/assets.yml, calls to include jammit packages from the layout markup.</p>
 <h2>References<br />
+<a href="http://devcenter.heroku.com/articles/rails31_heroku_cedar">Rails 3.1 on Heroku Cedar</a><br />
+<a href="http://railsapps.github.com/rails-heroku-tutorial.html">Deploying to Heroku with Rails 3.1</a><br />
+<a href="http://metaskills.net/2011/07/29/use-compass-sass-framework-files-with-the-rails-3.1.0.rc5-asset-pipeline/">Use Compass Sass Framework Files With The Rails 3.1.0.rc5 Asset Pipeline</a><br />
 <a href="http://ryanbigg.com/guides/asset_pipeline.html">Rails Guides Asset Pipeline</a><br />
 <a href="http://ryanbigg.com/2011/06/sprocket-asset-tags-internals/">Sprocket asset tag internals</a><br />
-<a href="http://blog.nodeta.com/2011/06/14/rails-3-1-asset-pipeline-in-the-real-world/">Rails 3.1 Asset Pipeline in the Real World</a><br />
-<a href="https://gist.github.com/1032551">Trying to get Compass working with the Rails 3.1 asset pipeline</a></h2>
+<a href="http://blog.nodeta.com/2011/06/14/rails-3-1-asset-pipeline-in-the-real-world/">Rails 3.1 Asset Pipeline in the Real World</a></h2>
 </div>
 
 <div id="related">
